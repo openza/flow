@@ -1,11 +1,14 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/app_constants.dart';
-import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/theme_provider.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../domain/models/pull_request.dart';
 import '../providers/pr_provider.dart';
+import '../widgets/paginated_pr_list.dart';
 import '../widgets/pr_card.dart';
 
 class PrListScreen extends ConsumerStatefulWidget {
@@ -20,6 +23,7 @@ class _PrListScreenState extends ConsumerState<PrListScreen>
   final _searchController = TextEditingController();
   late TabController _tabController;
   bool _isRefreshing = false;
+  Timer? _debounceTimer;
 
   @override
   void initState() {
@@ -31,13 +35,21 @@ class _PrListScreenState extends ConsumerState<PrListScreen>
   void dispose() {
     _searchController.dispose();
     _tabController.dispose();
+    _debounceTimer?.cancel();
     super.dispose();
+  }
+
+  void _onSearchChanged(String value) {
+    if (_debounceTimer?.isActive ?? false) _debounceTimer!.cancel();
+    _debounceTimer = Timer(const Duration(milliseconds: 500), () {
+      ref.read(prSearchQueryProvider.notifier).state = value;
+    });
   }
 
   Future<void> _refresh() async {
     setState(() => _isRefreshing = true);
 
-    // Refresh main lists first (don't wait for reviewed PRs as they take longer)
+    // Refresh main lists first
     await Future.wait([
       ref.read(prListProvider.notifier).refresh(),
       ref.read(createdPrListProvider.notifier).refresh(),
@@ -45,7 +57,7 @@ class _PrListScreenState extends ConsumerState<PrListScreen>
 
     setState(() => _isRefreshing = false);
 
-    // Refresh reviewed and recently created PRs in background (don't block UI)
+    // Refresh background lists
     ref.read(reviewedPrListProvider.notifier).refresh();
     ref.read(recentlyCreatedPrListProvider.notifier).refresh();
   }
@@ -54,7 +66,7 @@ class _PrListScreenState extends ConsumerState<PrListScreen>
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: AppTheme.surface,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         title: const Text('Sign out'),
         content: const Text('Are you sure you want to sign out?'),
         actions: [
@@ -68,7 +80,7 @@ class _PrListScreenState extends ConsumerState<PrListScreen>
               ref.read(authProvider.notifier).logout();
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.error,
+              backgroundColor: Theme.of(context).colorScheme.error,
             ),
             child: const Text('Sign out'),
           ),
@@ -80,6 +92,10 @@ class _PrListScreenState extends ConsumerState<PrListScreen>
   @override
   Widget build(BuildContext context) {
     final username = ref.watch(currentUsernameProvider);
+    final themeMode = ref.watch(themeModeProvider);
+    final isDark = themeMode == ThemeMode.dark;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
     return Scaffold(
       body: Column(
@@ -87,10 +103,10 @@ class _PrListScreenState extends ConsumerState<PrListScreen>
           // Header
           Container(
             padding: const EdgeInsets.all(AppConstants.defaultPadding),
-            decoration: const BoxDecoration(
-              color: AppTheme.surface,
+            decoration: BoxDecoration(
+              color: colorScheme.surface,
               border: Border(
-                bottom: BorderSide(color: AppTheme.border),
+                bottom: BorderSide(color: colorScheme.outline),
               ),
             ),
             child: Row(
@@ -98,7 +114,7 @@ class _PrListScreenState extends ConsumerState<PrListScreen>
                 // App icon
                 Icon(
                   Icons.inbox_rounded,
-                  color: AppTheme.primary,
+                  color: colorScheme.primary,
                   size: 24,
                 ),
                 const SizedBox(width: 12),
@@ -106,9 +122,9 @@ class _PrListScreenState extends ConsumerState<PrListScreen>
                 // Tabs
                 Container(
                   decoration: BoxDecoration(
-                    color: AppTheme.card,
+                    color: theme.cardTheme.color,
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: AppTheme.border),
+                    border: Border.all(color: colorScheme.outline),
                   ),
                   child: TabBar(
                     controller: _tabController,
@@ -117,11 +133,11 @@ class _PrListScreenState extends ConsumerState<PrListScreen>
                     indicatorSize: TabBarIndicatorSize.tab,
                     dividerColor: Colors.transparent,
                     indicator: BoxDecoration(
-                      color: AppTheme.primary.withValues(alpha: 0.15),
+                      color: colorScheme.primary.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(6),
                     ),
-                    labelColor: AppTheme.primary,
-                    unselectedLabelColor: AppTheme.textSecondary,
+                    labelColor: colorScheme.primary,
+                    unselectedLabelColor: theme.textTheme.bodyMedium?.color,
                     labelStyle: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
@@ -153,29 +169,39 @@ class _PrListScreenState extends ConsumerState<PrListScreen>
                   height: 36,
                   child: TextField(
                     controller: _searchController,
-                    onChanged: (value) {
-                      ref.read(prSearchQueryProvider.notifier).state = value;
-                    },
+                    onChanged: _onSearchChanged,
                     decoration: InputDecoration(
                       hintText: 'Search...',
                       prefixIcon: const Icon(Icons.search, size: 18),
                       contentPadding: const EdgeInsets.symmetric(horizontal: 12),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
-                        borderSide: const BorderSide(color: AppTheme.border),
+                        borderSide: BorderSide(color: colorScheme.outline),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
-                        borderSide: const BorderSide(color: AppTheme.border),
+                        borderSide: BorderSide(color: colorScheme.outline),
                       ),
                       filled: true,
-                      fillColor: AppTheme.card,
+                      fillColor: theme.cardTheme.color,
                     ),
                     style: const TextStyle(fontSize: 13),
                   ),
                 ),
 
                 const SizedBox(width: AppConstants.defaultPadding),
+                
+                // Theme Toggle
+                IconButton(
+                  onPressed: () {
+                    ref.read(themeModeProvider.notifier).toggle();
+                  },
+                  icon: Icon(
+                    isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
+                    size: 20,
+                  ),
+                  tooltip: isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode',
+                ),
 
                 // Refresh button
                 IconButton(
@@ -195,15 +221,15 @@ class _PrListScreenState extends ConsumerState<PrListScreen>
                   offset: const Offset(0, 40),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
-                    side: const BorderSide(color: AppTheme.border),
+                    side: BorderSide(color: colorScheme.outline),
                   ),
-                  color: AppTheme.surface,
+                  color: colorScheme.surface,
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
-                      color: AppTheme.card,
+                      color: theme.cardTheme.color,
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: AppTheme.border),
+                      border: Border.all(color: colorScheme.outline),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -211,13 +237,13 @@ class _PrListScreenState extends ConsumerState<PrListScreen>
                         Icon(
                           Icons.person_outline,
                           size: 18,
-                          color: AppTheme.textSecondary,
+                          color: theme.textTheme.bodyMedium?.color,
                         ),
                         const SizedBox(width: 6),
                         username.when(
                           data: (name) => Text(
                             name ?? 'User',
-                            style: Theme.of(context).textTheme.bodyMedium,
+                            style: theme.textTheme.bodyMedium,
                           ),
                           loading: () => const Text('...'),
                           error: (e, s) => const Text('User'),
@@ -226,7 +252,7 @@ class _PrListScreenState extends ConsumerState<PrListScreen>
                         Icon(
                           Icons.expand_more,
                           size: 18,
-                          color: AppTheme.textMuted,
+                          color: theme.textTheme.bodySmall?.color,
                         ),
                       ],
                     ),
@@ -239,12 +265,12 @@ class _PrListScreenState extends ConsumerState<PrListScreen>
                           Icon(
                             Icons.logout_rounded,
                             size: 18,
-                            color: AppTheme.error,
+                            color: colorScheme.error,
                           ),
                           const SizedBox(width: 8),
                           Text(
                             'Sign out',
-                            style: TextStyle(color: AppTheme.error),
+                            style: TextStyle(color: colorScheme.error),
                           ),
                         ],
                       ),
@@ -265,9 +291,7 @@ class _PrListScreenState extends ConsumerState<PrListScreen>
             child: TabBarView(
               controller: _tabController,
               children: [
-                // Review Requests tab (with recently reviewed section)
                 _buildReviewRequestsTab(),
-                // Created PRs tab (with recently created section)
                 _buildCreatedTab(),
               ],
             ),
@@ -279,30 +303,17 @@ class _PrListScreenState extends ConsumerState<PrListScreen>
 
   Widget _buildReviewRequestsTab() {
     final pendingReviews = ref.watch(filteredPrListProvider);
+    final reviewedPrs = ref.watch(reviewedPrListProvider);
 
     return pendingReviews.when(
-      data: (pendingPrs) {
-        // Only watch reviewedPrListProvider after pending reviews are loaded
-        final reviewedPrs = ref.watch(reviewedPrListProvider);
-
-        return ListView(
-          padding: const EdgeInsets.all(AppConstants.defaultPadding),
-          children: [
-            // Pending reviews section
-            if (pendingPrs.isNotEmpty) ...[
-              for (int i = 0; i < pendingPrs.length; i++)
-                PrCard(pr: pendingPrs[i], index: i),
-            ] else ...[
-              _buildInlineEmptyState(
-                'No pull requests waiting for your review',
-                Icons.check_circle_outline_rounded,
-              ),
-            ],
-
-            // Recently reviewed section
-            const SizedBox(height: AppConstants.defaultPadding),
-            _buildRecentlyReviewedSection(reviewedPrs),
-          ],
+      data: (prs) {
+        return PaginatedPrList(
+          prs: prs,
+          onLoadMore: () => ref.read(prListProvider.notifier).loadMore(),
+          header: _buildSectionHeader('Pending Reviews', Icons.pending_actions_rounded),
+          footer: _buildRecentlyReviewedSection(reviewedPrs),
+          emptyMessage: 'No pull requests waiting for your review',
+          emptyIcon: Icons.check_circle_outline_rounded,
         );
       },
       loading: () => _buildLoadingState(),
@@ -310,103 +321,62 @@ class _PrListScreenState extends ConsumerState<PrListScreen>
     );
   }
 
-  Widget _buildRecentlyReviewedSection(AsyncValue<List<ReviewedPullRequestModel>> reviewedPrs) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Section header
-        Row(
+  Widget _buildRecentlyReviewedSection(
+      AsyncValue<List<ReviewedPullRequestModel>> reviewedPrs) {
+    return reviewedPrs.when(
+      data: (prs) {
+        if (prs.isEmpty) return const SizedBox.shrink();
+        
+        final theme = Theme.of(context);
+        
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(
-              Icons.history_rounded,
-              size: 16,
-              color: AppTheme.textMuted,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              'Recently Reviewed',
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    color: AppTheme.textSecondary,
-                    fontWeight: FontWeight.w600,
-                  ),
-            ),
-          ],
-        ),
-        const SizedBox(height: AppConstants.smallPadding),
-
-        // Reviewed PRs list
-        reviewedPrs.when(
-          data: (prs) {
-            if (prs.isEmpty) {
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                child: Text(
-                  'No recently reviewed pull requests',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppTheme.textMuted,
+            Divider(color: theme.colorScheme.outline),
+            const SizedBox(height: AppConstants.defaultPadding),
+            Row(
+              children: [
+                Icon(Icons.history_rounded, size: 16, color: theme.textTheme.bodySmall?.color),
+                const SizedBox(width: 8),
+                Text(
+                  'Recently Reviewed',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                        color: theme.textTheme.bodyMedium?.color,
+                        fontWeight: FontWeight.w600,
                       ),
                 ),
-              );
-            }
-            return Column(
+              ],
+            ),
+            const SizedBox(height: AppConstants.smallPadding),
+            Column(
               children: [
                 for (final pr in prs) ...[
                   ReviewedPrCard(pr: pr),
                   const SizedBox(height: 6),
                 ],
               ],
-            );
-          },
-          loading: () => const Padding(
-            padding: EdgeInsets.symmetric(vertical: 16),
-            child: Center(
-              child: SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              ),
             ),
-          ),
-          error: (error, stack) => Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            child: Text(
-              'Failed to load reviewed PRs',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: AppTheme.error,
-                  ),
-            ),
-          ),
-        ),
-      ],
+          ],
+        );
+      },
+      loading: () => const SizedBox.shrink(),
+      error: (_, __) => const SizedBox.shrink(),
     );
   }
 
   Widget _buildCreatedTab() {
     final createdPrs = ref.watch(filteredCreatedPrListProvider);
+    final recentlyCreatedPrs = ref.watch(recentlyCreatedPrListProvider);
 
     return createdPrs.when(
-      data: (openPrs) {
-        // Only watch recentlyCreatedPrListProvider after open PRs are loaded
-        final recentlyCreatedPrs = ref.watch(recentlyCreatedPrListProvider);
-
-        return ListView(
-          padding: const EdgeInsets.all(AppConstants.defaultPadding),
-          children: [
-            // Open PRs section
-            if (openPrs.isNotEmpty) ...[
-              for (int i = 0; i < openPrs.length; i++)
-                PrCard(pr: openPrs[i], index: i),
-            ] else ...[
-              _buildInlineEmptyState(
-                'You have no open pull requests',
-                Icons.create_rounded,
-              ),
-            ],
-
-            // Recently created section
-            const SizedBox(height: AppConstants.defaultPadding),
-            _buildRecentlyCreatedSection(recentlyCreatedPrs),
-          ],
+      data: (prs) {
+        return PaginatedPrList(
+          prs: prs,
+          onLoadMore: () => ref.read(createdPrListProvider.notifier).loadMore(),
+          header: _buildSectionHeader('Open Pull Requests', Icons.folder_open_rounded),
+          footer: _buildRecentlyCreatedSection(recentlyCreatedPrs),
+          emptyMessage: 'You have no open pull requests',
+          emptyIcon: Icons.create_rounded,
         );
       },
       loading: () => _buildLoadingState(),
@@ -414,103 +384,63 @@ class _PrListScreenState extends ConsumerState<PrListScreen>
     );
   }
 
-  Widget _buildRecentlyCreatedSection(AsyncValue<List<CreatedPullRequestModel>> recentlyCreatedPrs) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Section header
-        Row(
+  Widget _buildRecentlyCreatedSection(
+      AsyncValue<List<CreatedPullRequestModel>> recentlyCreatedPrs) {
+    return recentlyCreatedPrs.when(
+      data: (prs) {
+        if (prs.isEmpty) return const SizedBox.shrink();
+        
+        final theme = Theme.of(context);
+        
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(
-              Icons.history_rounded,
-              size: 16,
-              color: AppTheme.textMuted,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              'Recently Created',
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    color: AppTheme.textSecondary,
-                    fontWeight: FontWeight.w600,
-                  ),
-            ),
-          ],
-        ),
-        const SizedBox(height: AppConstants.smallPadding),
-
-        // Recently created PRs list
-        recentlyCreatedPrs.when(
-          data: (prs) {
-            if (prs.isEmpty) {
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                child: Text(
-                  'No recently created pull requests',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppTheme.textMuted,
+            Divider(color: theme.colorScheme.outline),
+            const SizedBox(height: AppConstants.defaultPadding),
+            Row(
+              children: [
+                Icon(Icons.history_rounded, size: 16, color: theme.textTheme.bodySmall?.color),
+                const SizedBox(width: 8),
+                Text(
+                  'Recently Created',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                        color: theme.textTheme.bodyMedium?.color,
+                        fontWeight: FontWeight.w600,
                       ),
                 ),
-              );
-            }
-            return Column(
+              ],
+            ),
+            const SizedBox(height: AppConstants.smallPadding),
+            Column(
               children: [
                 for (final pr in prs) ...[
                   CreatedPrCard(pr: pr),
                   const SizedBox(height: 6),
                 ],
               ],
-            );
-          },
-          loading: () => const Padding(
-            padding: EdgeInsets.symmetric(vertical: 16),
-            child: Center(
-              child: SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              ),
             ),
-          ),
-          error: (error, stack) => Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            child: Text(
-              'Failed to load recently created PRs',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: AppTheme.error,
-                  ),
-            ),
-          ),
-        ),
-      ],
+          ],
+        );
+      },
+      loading: () => const SizedBox.shrink(),
+      error: (_, __) => const SizedBox.shrink(),
     );
   }
 
-  Widget _buildInlineEmptyState(String message, IconData icon) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 48),
-      child: Column(
-        children: [
-          Icon(
-            icon,
-            size: 48,
-            color: AppTheme.textMuted,
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'All caught up!',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: AppTheme.textSecondary,
-                ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            message,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppTheme.textMuted,
-                ),
-          ),
-        ],
-      ),
+  Widget _buildSectionHeader(String title, IconData icon) {
+    final theme = Theme.of(context);
+    return Row(
+      children: [
+        Icon(icon, size: 16, color: theme.textTheme.bodySmall?.color),
+        const SizedBox(width: 8),
+        Text(
+          title,
+          style: theme.textTheme.titleSmall?.copyWith(
+                color: theme.textTheme.bodyMedium?.color,
+                fontWeight: FontWeight.w600,
+              ),
+        ),
+      ],
     );
   }
 
@@ -531,6 +461,7 @@ class _PrListScreenState extends ConsumerState<PrListScreen>
   }
 
   Widget _buildErrorState(Object error) {
+    final theme = Theme.of(context);
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -538,13 +469,13 @@ class _PrListScreenState extends ConsumerState<PrListScreen>
           Icon(
             Icons.error_outline_rounded,
             size: 64,
-            color: AppTheme.error,
+            color: theme.colorScheme.error,
           ),
           const SizedBox(height: AppConstants.defaultPadding),
           Text(
             'Something went wrong',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  color: AppTheme.textSecondary,
+            style: theme.textTheme.titleLarge?.copyWith(
+                  color: theme.textTheme.bodyMedium?.color,
                 ),
           ),
           const SizedBox(height: AppConstants.smallPadding),
@@ -552,7 +483,7 @@ class _PrListScreenState extends ConsumerState<PrListScreen>
             padding: const EdgeInsets.symmetric(horizontal: 48),
             child: Text(
               error.toString(),
-              style: Theme.of(context).textTheme.bodyMedium,
+              style: theme.textTheme.bodyMedium,
               textAlign: TextAlign.center,
             ),
           ),

@@ -14,19 +14,19 @@ class AuthNotifier extends AsyncNotifier<bool> {
     return token != null && token.isNotEmpty;
   }
 
-  Future<bool> login(String token) async {
+  Future<String?> login(String token) async {
     state = const AsyncValue.loading();
 
     final tokenRepo = ref.read(tokenRepositoryProvider);
-    final isValid = await tokenRepo.validateToken(token);
+    final error = await tokenRepo.validateToken(token);
 
-    if (isValid) {
+    if (error == null) {
       await tokenRepo.saveToken(token);
       state = const AsyncValue.data(true);
-      return true;
+      return null;
     } else {
       state = const AsyncValue.data(false);
-      return false;
+      return error;
     }
   }
 

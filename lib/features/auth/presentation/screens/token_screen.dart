@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/constants/app_constants.dart';
-import '../../../../core/theme/app_theme.dart';
 import '../providers/auth_provider.dart';
 
 class TokenScreen extends ConsumerStatefulWidget {
@@ -34,14 +33,14 @@ class _TokenScreenState extends ConsumerState<TokenScreen> {
       _errorMessage = null;
     });
 
-    final success = await ref.read(authProvider.notifier).login(
+    final error = await ref.read(authProvider.notifier).login(
           _tokenController.text.trim(),
         );
 
-    if (!success && mounted) {
+    if (error != null && mounted) {
       setState(() {
         _isLoading = false;
-        _errorMessage = 'Invalid token. Please check and try again.';
+        _errorMessage = error;
       });
     }
   }
@@ -57,6 +56,9 @@ class _TokenScreenState extends ConsumerState<TokenScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Scaffold(
       body: Center(
         child: SingleChildScrollView(
@@ -73,14 +75,14 @@ class _TokenScreenState extends ConsumerState<TokenScreen> {
                   Icon(
                     Icons.inbox_rounded,
                     size: 64,
-                    color: AppTheme.primary,
+                    color: colorScheme.primary,
                   ),
                   const SizedBox(height: AppConstants.defaultPadding),
 
                   // Title
                   Text(
                     AppConstants.appName,
-                    style: Theme.of(context).textTheme.headlineLarge,
+                    style: theme.textTheme.headlineLarge,
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: AppConstants.smallPadding),
@@ -88,7 +90,7 @@ class _TokenScreenState extends ConsumerState<TokenScreen> {
                   // Subtitle
                   Text(
                     'GitHub PR Review Inbox',
-                    style: Theme.of(context).textTheme.bodyMedium,
+                    style: theme.textTheme.bodyMedium,
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: AppConstants.largePadding * 2),
@@ -96,7 +98,7 @@ class _TokenScreenState extends ConsumerState<TokenScreen> {
                   // Token input
                   Text(
                     'Personal Access Token',
-                    style: Theme.of(context).textTheme.titleMedium,
+                    style: theme.textTheme.titleMedium,
                   ),
                   const SizedBox(height: AppConstants.smallPadding),
 
@@ -139,7 +141,7 @@ class _TokenScreenState extends ConsumerState<TokenScreen> {
                     Text(
                       _errorMessage!,
                       style: TextStyle(
-                        color: AppTheme.error,
+                        color: colorScheme.error,
                         fontSize: 13,
                       ),
                     ),
@@ -171,9 +173,9 @@ class _TokenScreenState extends ConsumerState<TokenScreen> {
                   Container(
                     padding: const EdgeInsets.all(AppConstants.defaultPadding),
                     decoration: BoxDecoration(
-                      color: AppTheme.surface,
+                      color: colorScheme.surface,
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: AppTheme.border),
+                      border: Border.all(color: colorScheme.outline),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -183,19 +185,19 @@ class _TokenScreenState extends ConsumerState<TokenScreen> {
                             Icon(
                               Icons.info_outline_rounded,
                               size: 16,
-                              color: AppTheme.textSecondary,
+                              color: theme.textTheme.bodyMedium?.color,
                             ),
                             const SizedBox(width: 8),
                             Text(
                               'Need a token?',
-                              style: Theme.of(context).textTheme.titleMedium,
+                              style: theme.textTheme.titleMedium,
                             ),
                           ],
                         ),
                         const SizedBox(height: AppConstants.smallPadding),
                         Text(
                           'Create a Personal Access Token with repo and read:user scopes.',
-                          style: Theme.of(context).textTheme.bodySmall,
+                          style: theme.textTheme.bodySmall,
                         ),
                         const SizedBox(height: AppConstants.smallPadding),
                         TextButton.icon(

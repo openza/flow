@@ -7,17 +7,22 @@ import 'features/auth/presentation/providers/auth_provider.dart';
 import 'features/auth/presentation/screens/token_screen.dart';
 import 'features/pull_requests/presentation/screens/pr_list_screen.dart';
 
+import 'core/theme/theme_provider.dart';
+
 class GitDeskApp extends ConsumerWidget {
   const GitDeskApp({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authProvider);
+    final themeMode = ref.watch(themeModeProvider);
 
     return MaterialApp(
       title: AppConstants.appName,
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.darkTheme,
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: themeMode,
       home: authState.when(
         data: (isAuthenticated) {
           if (isAuthenticated) {

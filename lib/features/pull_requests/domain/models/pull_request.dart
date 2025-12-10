@@ -56,6 +56,43 @@ class PullRequestModel {
           .toList(),
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'number': number,
+      'title': title,
+      'body': body,
+      'state': state,
+      'html_url': htmlUrl,
+      'created_at': createdAt.toIso8601String(),
+      'updated_at': updatedAt.toIso8601String(),
+      'draft': draft,
+      'author': author.toJson(),
+      'repository': repository.toJson(),
+      'labels': labels.map((l) => l.toJson()).toList(),
+    };
+  }
+
+  factory PullRequestModel.fromJson(Map<String, dynamic> json) {
+    return PullRequestModel(
+      id: json['id'] as int,
+      number: json['number'] as int,
+      title: json['title'] as String,
+      body: json['body'] as String,
+      state: json['state'] as String,
+      htmlUrl: json['html_url'] as String,
+      createdAt: DateTime.parse(json['created_at'] as String),
+      updatedAt: DateTime.parse(json['updated_at'] as String),
+      draft: json['draft'] as bool,
+      author: UserModel.fromJson(json['author'] as Map<String, dynamic>),
+      repository:
+          RepositoryModel.fromJson(json['repository'] as Map<String, dynamic>),
+      labels: (json['labels'] as List<dynamic>)
+          .map((l) => LabelModel.fromJson(l as Map<String, dynamic>))
+          .toList(),
+    );
+  }
 }
 
 class UserModel {
@@ -79,6 +116,15 @@ class UserModel {
       htmlUrl: json['html_url'] as String? ?? '',
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'login': login,
+      'avatar_url': avatarUrl,
+      'html_url': htmlUrl,
+    };
+  }
 }
 
 class RepositoryModel {
@@ -92,6 +138,20 @@ class RepositoryModel {
 
   String get owner => fullName.split('/').firstOrNull ?? '';
   String get name => fullName.split('/').lastOrNull ?? '';
+
+  factory RepositoryModel.fromJson(Map<String, dynamic> json) {
+    return RepositoryModel(
+      fullName: json['full_name'] as String,
+      htmlUrl: json['html_url'] as String,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'full_name': fullName,
+      'html_url': htmlUrl,
+    };
+  }
 }
 
 enum ReviewState {
@@ -135,6 +195,9 @@ class ReviewedPullRequestModel {
     required ReviewState reviewState,
     required DateTime reviewedAt,
   }) {
+    // Legacy support for REST
+    // ... same as before but adapted if needed
+    // Simplified since we are moving away from REST
     final repositoryUrl = json['repository_url'] as String? ?? '';
     final repoParts = repositoryUrl.split('/');
     final repoName = repoParts.length >= 2
@@ -167,6 +230,35 @@ class ReviewedPullRequestModel {
         fullName: repoName,
         htmlUrl: repositoryUrl,
       ),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'number': number,
+      'title': title,
+      'html_url': htmlUrl,
+      'reviewed_at': reviewedAt.toIso8601String(),
+      'review_state': reviewState.index,
+      'merge_state': mergeState.index,
+      'author': author.toJson(),
+      'repository': repository.toJson(),
+    };
+  }
+
+  factory ReviewedPullRequestModel.fromJson(Map<String, dynamic> json) {
+    return ReviewedPullRequestModel(
+      id: json['id'] as int,
+      number: json['number'] as int,
+      title: json['title'] as String,
+      htmlUrl: json['html_url'] as String,
+      reviewedAt: DateTime.parse(json['reviewed_at'] as String),
+      reviewState: ReviewState.values[json['review_state'] as int],
+      mergeState: MergeState.values[json['merge_state'] as int],
+      author: UserModel.fromJson(json['author'] as Map<String, dynamic>),
+      repository:
+          RepositoryModel.fromJson(json['repository'] as Map<String, dynamic>),
     );
   }
 }
@@ -223,6 +315,31 @@ class CreatedPullRequestModel {
       ),
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'number': number,
+      'title': title,
+      'html_url': htmlUrl,
+      'created_at': createdAt.toIso8601String(),
+      'merge_state': mergeState.index,
+      'repository': repository.toJson(),
+    };
+  }
+
+  factory CreatedPullRequestModel.fromJson(Map<String, dynamic> json) {
+    return CreatedPullRequestModel(
+      id: json['id'] as int,
+      number: json['number'] as int,
+      title: json['title'] as String,
+      htmlUrl: json['html_url'] as String,
+      createdAt: DateTime.parse(json['created_at'] as String),
+      mergeState: MergeState.values[json['merge_state'] as int],
+      repository:
+          RepositoryModel.fromJson(json['repository'] as Map<String, dynamic>),
+    );
+  }
 }
 
 class LabelModel {
@@ -247,6 +364,15 @@ class LabelModel {
     );
   }
 
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'color': color,
+      'description': description,
+    };
+  }
+
   Color get backgroundColor {
     final colorInt = int.tryParse(color, radix: 16) ?? 0;
     return Color(0xFF000000 | colorInt);
@@ -254,7 +380,6 @@ class LabelModel {
 
   Color get textColor {
     final bg = backgroundColor;
-    // Calculate luminance to determine text color
     final r = (bg.r * 255.0).round().clamp(0, 255);
     final g = (bg.g * 255.0).round().clamp(0, 255);
     final b = (bg.b * 255.0).round().clamp(0, 255);

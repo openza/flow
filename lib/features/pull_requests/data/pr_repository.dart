@@ -1,297 +1,476 @@
-import 'dart:convert';
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:http/http.dart' as http;
+import 'package:graphql/client.dart';
 
-import '../../../core/constants/app_constants.dart';
+import '../../../core/models/paginated_result.dart';
+import '../../../core/services/graphql_service.dart';
+import '../../../core/services/local_storage_service.dart';
 import '../../auth/data/token_repository.dart';
 import '../domain/models/pull_request.dart';
 
 final prRepositoryProvider = Provider<PrRepository>((ref) {
+  final graphQLService = ref.watch(graphQLServiceProvider);
   final tokenRepo = ref.watch(tokenRepositoryProvider);
-  return PrRepository(tokenRepo);
+  final localStorage = ref.watch(localStorageServiceProvider);
+  return PrRepository(graphQLService, tokenRepo, localStorage);
 });
 
 class PrRepository {
+  final GraphQLService _graphQLService;
   final TokenRepository _tokenRepository;
+  final LocalStorageService _localStorage;
 
-  PrRepository(this._tokenRepository);
+  PrRepository(
+    this._graphQLService,
+    this._tokenRepository,
+    this._localStorage,
+  );
 
-  Future<List<PullRequestModel>> getReviewRequests() async {
-    final token = await _tokenRepository.getToken();
+  static const _reviewRequestsKey = 'review_requests';
+  static const _createdPrsKey = 'created_prs';
+  static const _reviewedPrsKey = 'reviewed_prs';
+  static const _recentlyCreatedPrsKey = 'recently_created_prs';
+
+  Future<PaginatedResult<PullRequestModel>> getReviewRequests({String? afterCursor}) async {
     final username = await _tokenRepository.getUsername();
+    if (username == null) throw Exception('Not authenticated');
 
-    if (token == null || username == null) {
-      throw Exception('Not authenticated');
+    final query = 'type:pr state:open review-requested:$username sort:updated-desc';
+    final result = await _searchPullRequests(query, afterCursor: afterCursor);
+
+    // Cache ONLY the first page
+    if (afterCursor == null) {
+      await _localStorage.cachePrData(_reviewRequestsKey, {
+        'data': result.items.map((e) => e.toJson()).toList(),
+        'timestamp': DateTime.now().toIso8601String(),
+      });
     }
 
-    final query = 'type:pr state:open review-requested:$username';
-    final uri = Uri.parse(
-      '${AppConstants.githubApiBaseUrl}/search/issues?q=${Uri.encodeComponent(query)}&sort=updated&order=desc&per_page=100',
-    );
-
-    final response = await http.get(
-      uri,
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Accept': 'application/vnd.github+json',
-        'X-GitHub-Api-Version': '2022-11-28',
-      },
-    ).timeout(const Duration(seconds: 30));
-
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body) as Map<String, dynamic>;
-      final items = data['items'] as List<dynamic>? ?? [];
-
-      return items
-          .map((item) =>
-              PullRequestModel.fromGitHubIssue(item as Map<String, dynamic>))
-          .toList();
-    } else if (response.statusCode == 401) {
-      throw Exception('Authentication failed. Please check your token.');
-    } else if (response.statusCode == 403) {
-      final remaining = response.headers['x-ratelimit-remaining'];
-      if (remaining == '0') {
-        final resetTime = response.headers['x-ratelimit-reset'];
-        throw Exception(
-            'Rate limit exceeded. Resets at ${_formatResetTime(resetTime)}');
-      }
-      throw Exception('Access forbidden');
-    } else {
-      throw Exception('Failed to fetch pull requests: ${response.statusCode}');
-    }
+    return result;
   }
 
-  Future<List<PullRequestModel>> getCreatedPrs() async {
-    final token = await _tokenRepository.getToken();
-    final username = await _tokenRepository.getUsername();
+  Future<PaginatedResult<PullRequestModel>> getCachedReviewRequests() async {
+    final data = await _localStorage.getCachedPrData(_reviewRequestsKey);
+    if (data == null) return PaginatedResult.empty();
 
-    if (token == null || username == null) {
-      throw Exception('Not authenticated');
-    }
-
-    final query = 'author:$username type:pr state:open';
-    final uri = Uri.parse(
-      '${AppConstants.githubApiBaseUrl}/search/issues?q=${Uri.encodeComponent(query)}&sort=updated&order=desc&per_page=100',
-    );
-
-    final response = await http.get(
-      uri,
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Accept': 'application/vnd.github+json',
-        'X-GitHub-Api-Version': '2022-11-28',
-      },
-    ).timeout(const Duration(seconds: 30));
-
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body) as Map<String, dynamic>;
-      final items = data['items'] as List<dynamic>? ?? [];
-
-      return items
-          .map((item) =>
-              PullRequestModel.fromGitHubIssue(item as Map<String, dynamic>))
-          .toList();
-    } else if (response.statusCode == 401) {
-      throw Exception('Authentication failed. Please check your token.');
-    } else if (response.statusCode == 403) {
-      final remaining = response.headers['x-ratelimit-remaining'];
-      if (remaining == '0') {
-        final resetTime = response.headers['x-ratelimit-reset'];
-        throw Exception(
-            'Rate limit exceeded. Resets at ${_formatResetTime(resetTime)}');
-      }
-      throw Exception('Access forbidden');
-    } else {
-      throw Exception('Failed to fetch pull requests: ${response.statusCode}');
-    }
+    final list = data['data'] as List<dynamic>? ?? [];
+    final items = list.map((e) => PullRequestModel.fromJson(e)).toList();
+    
+    // We treat cached data as a single page with no next page for simplicity
+    return PaginatedResult(items: items, hasNextPage: false);
   }
 
-  /// Fetches PRs that the user has reviewed (last 5)
-  Future<List<ReviewedPullRequestModel>> getReviewedPrs() async {
-    final token = await _tokenRepository.getToken();
+  Future<PaginatedResult<PullRequestModel>> getCreatedPrs({String? afterCursor}) async {
     final username = await _tokenRepository.getUsername();
+    if (username == null) throw Exception('Not authenticated');
 
-    if (token == null || username == null) {
-      throw Exception('Not authenticated');
+    final query = 'author:$username type:pr state:open sort:updated-desc';
+    final result = await _searchPullRequests(query, afterCursor: afterCursor);
+
+    if (afterCursor == null) {
+      await _localStorage.cachePrData(_createdPrsKey, {
+        'data': result.items.map((e) => e.toJson()).toList(),
+        'timestamp': DateTime.now().toIso8601String(),
+      });
     }
 
-    // Search for PRs where the user has submitted a review (reviewed-by)
-    // Include all states (open, closed, merged)
-    final query = 'type:pr reviewed-by:$username -author:$username';
-    final uri = Uri.parse(
-      '${AppConstants.githubApiBaseUrl}/search/issues?q=${Uri.encodeComponent(query)}&sort=updated&order=desc&per_page=5',
-    );
-
-    final response = await http.get(
-      uri,
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Accept': 'application/vnd.github+json',
-        'X-GitHub-Api-Version': '2022-11-28',
-      },
-    ).timeout(const Duration(seconds: 30));
-
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body) as Map<String, dynamic>;
-      final items = data['items'] as List<dynamic>? ?? [];
-
-      // Fetch review info for all PRs in parallel
-      final futures = items.map((item) {
-        final prData = item as Map<String, dynamic>;
-        return _getReviewInfo(token, username, prData);
-      }).toList();
-
-      final results = await Future.wait(futures);
-      final reviewedPrs = results.whereType<ReviewedPullRequestModel>().toList();
-
-      return reviewedPrs;
-    } else if (response.statusCode == 401) {
-      throw Exception('Authentication failed. Please check your token.');
-    } else if (response.statusCode == 403) {
-      final remaining = response.headers['x-ratelimit-remaining'];
-      if (remaining == '0') {
-        final resetTime = response.headers['x-ratelimit-reset'];
-        throw Exception(
-            'Rate limit exceeded. Resets at ${_formatResetTime(resetTime)}');
-      }
-      throw Exception('Access forbidden');
-    } else {
-      throw Exception('Failed to fetch reviewed PRs: ${response.statusCode}');
-    }
+    return result;
   }
 
-  Future<ReviewedPullRequestModel?> _getReviewInfo(
-    String token,
-    String username,
-    Map<String, dynamic> prData,
-  ) async {
-    try {
-      // Extract owner and repo from repository_url
-      final repositoryUrl = prData['repository_url'] as String? ?? '';
-      final repoParts = repositoryUrl.split('/');
-      if (repoParts.length < 2) return null;
+  Future<PaginatedResult<PullRequestModel>> getCachedCreatedPrs() async {
+    final data = await _localStorage.getCachedPrData(_createdPrsKey);
+    if (data == null) return PaginatedResult.empty();
 
-      final owner = repoParts[repoParts.length - 2];
-      final repo = repoParts.last;
-      final prNumber = prData['number'] as int;
+    final list = data['data'] as List<dynamic>? ?? [];
+    final items = list.map((e) => PullRequestModel.fromJson(e)).toList();
+    return PaginatedResult(items: items, hasNextPage: false);
+  }
 
-      // Fetch reviews for this PR
-      final reviewsUri = Uri.parse(
-        '${AppConstants.githubApiBaseUrl}/repos/$owner/$repo/pulls/$prNumber/reviews',
-      );
+  Future<PaginatedResult<ReviewedPullRequestModel>> getReviewedPrs({String? afterCursor}) async {
+    final username = await _tokenRepository.getUsername();
+    if (username == null) throw Exception('Not authenticated');
 
-      final reviewsResponse = await http.get(
-        reviewsUri,
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Accept': 'application/vnd.github+json',
-          'X-GitHub-Api-Version': '2022-11-28',
-        },
-      ).timeout(const Duration(seconds: 10));
-
-      if (reviewsResponse.statusCode != 200) {
-        // If we can't get reviews, still show the PR with pending state
-        return ReviewedPullRequestModel.fromGitHubIssue(
-          prData,
-          reviewState: ReviewState.pending,
-          reviewedAt: DateTime.parse(prData['updated_at'] as String),
-        );
-      }
-
-      final reviews = json.decode(reviewsResponse.body) as List<dynamic>;
-
-      // Find the user's most recent review
-      ReviewState reviewState = ReviewState.pending;
-      DateTime reviewedAt = DateTime.parse(prData['updated_at'] as String);
-
-      for (final review in reviews.reversed) {
-        final reviewData = review as Map<String, dynamic>;
-        final reviewer = reviewData['user'] as Map<String, dynamic>?;
-        if (reviewer?['login'] == username) {
-          final state = reviewData['state'] as String? ?? '';
-          reviewedAt = DateTime.parse(reviewData['submitted_at'] as String);
-
-          switch (state.toUpperCase()) {
-            case 'APPROVED':
-              reviewState = ReviewState.approved;
-              break;
-            case 'CHANGES_REQUESTED':
-              reviewState = ReviewState.changesRequested;
-              break;
-            case 'COMMENTED':
-              reviewState = ReviewState.commented;
-              break;
-            default:
-              reviewState = ReviewState.pending;
+    final query = 'type:pr reviewed-by:$username -author:$username sort:updated-desc';
+    
+    final client = await _graphQLService.client;
+    
+    const String graphqlQuery = r'''
+      query SearchReviewedPRs($query: String!, $cursor: String) {
+        search(query: $query, type: ISSUE, first: 20, after: $cursor) {
+          pageInfo {
+            hasNextPage
+            endCursor
           }
-          break;
+          nodes {
+            ... on PullRequest {
+              databaseId
+              number
+              title
+              url
+              state
+              mergedAt
+              updatedAt
+              author {
+                login
+                avatarUrl
+                url
+              }
+              repository {
+                name
+                owner {
+                  login
+                }
+                url
+              }
+              reviews(last: 20) {
+                nodes {
+                  state
+                  author {
+                    login
+                  }
+                  submittedAt
+                }
+              }
+            }
+          }
         }
       }
+    ''';
 
-      return ReviewedPullRequestModel.fromGitHubIssue(
-        prData,
-        reviewState: reviewState,
-        reviewedAt: reviewedAt,
-      );
-    } catch (e) {
-      // On error, return null to skip this PR
-      return null;
-    }
-  }
+    final result = await client.query(QueryOptions(
+      document: gql(graphqlQuery),
+      variables: {
+        'query': query,
+        'cursor': afterCursor,
+      },
+      fetchPolicy: FetchPolicy.networkOnly,
+    ));
 
-  /// Fetches recently created PRs by the user (last 5, any state)
-  Future<List<CreatedPullRequestModel>> getRecentlyCreatedPrs() async {
-    final token = await _tokenRepository.getToken();
-    final username = await _tokenRepository.getUsername();
-
-    if (token == null || username == null) {
-      throw Exception('Not authenticated');
+    if (result.hasException) {
+      throw Exception(result.exception.toString());
     }
 
-    // Search for PRs authored by the user (any state - open, closed, merged)
-    final query = 'type:pr author:$username';
-    final uri = Uri.parse(
-      '${AppConstants.githubApiBaseUrl}/search/issues?q=${Uri.encodeComponent(query)}&sort=created&order=desc&per_page=5',
+    final List<ReviewedPullRequestModel> reviewedPrs = [];
+    final search = result.data?['search'];
+    final nodes = search?['nodes'] as List<dynamic>? ?? [];
+    final pageInfo = search?['pageInfo'];
+
+    for (final node in nodes) {
+      if (node == null) continue;
+      final pr = _mapToReviewedPrModel(node, username);
+      if (pr != null) {
+        reviewedPrs.add(pr);
+      }
+    }
+
+    final paginatedResult = PaginatedResult(
+      items: reviewedPrs,
+      hasNextPage: pageInfo?['hasNextPage'] as bool? ?? false,
+      endCursor: pageInfo?['endCursor'] as String?,
     );
 
-    final response = await http.get(
-      uri,
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Accept': 'application/vnd.github+json',
-        'X-GitHub-Api-Version': '2022-11-28',
-      },
-    ).timeout(const Duration(seconds: 30));
-
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body) as Map<String, dynamic>;
-      final items = data['items'] as List<dynamic>? ?? [];
-
-      return items
-          .map((item) =>
-              CreatedPullRequestModel.fromGitHubIssue(item as Map<String, dynamic>))
-          .toList();
-    } else if (response.statusCode == 401) {
-      throw Exception('Authentication failed. Please check your token.');
-    } else if (response.statusCode == 403) {
-      final remaining = response.headers['x-ratelimit-remaining'];
-      if (remaining == '0') {
-        final resetTime = response.headers['x-ratelimit-reset'];
-        throw Exception(
-            'Rate limit exceeded. Resets at ${_formatResetTime(resetTime)}');
-      }
-      throw Exception('Access forbidden');
-    } else {
-      throw Exception('Failed to fetch recently created PRs: ${response.statusCode}');
+    if (afterCursor == null) {
+      await _localStorage.cachePrData(_reviewedPrsKey, {
+        'data': reviewedPrs.map((e) => e.toJson()).toList(),
+        'timestamp': DateTime.now().toIso8601String(),
+      });
     }
+
+    return paginatedResult;
   }
 
-  String _formatResetTime(String? resetTimestamp) {
-    if (resetTimestamp == null) return 'unknown';
-    final timestamp = int.tryParse(resetTimestamp);
-    if (timestamp == null) return 'unknown';
-    final resetDate = DateTime.fromMillisecondsSinceEpoch(timestamp * 1000);
-    return '${resetDate.hour}:${resetDate.minute.toString().padLeft(2, '0')}';
+  Future<PaginatedResult<ReviewedPullRequestModel>> getCachedReviewedPrs() async {
+    final data = await _localStorage.getCachedPrData(_reviewedPrsKey);
+    if (data == null) return PaginatedResult.empty();
+
+    final list = data['data'] as List<dynamic>? ?? [];
+    final items = list.map((e) => ReviewedPullRequestModel.fromJson(e)).toList();
+    return PaginatedResult(items: items, hasNextPage: false);
+  }
+
+  Future<List<CreatedPullRequestModel>> getRecentlyCreatedPrs() async {
+    final username = await _tokenRepository.getUsername();
+    if (username == null) throw Exception('Not authenticated');
+
+    final query = 'type:pr author:$username sort:created-desc';
+    
+    final client = await _graphQLService.client;
+    
+    // We keep this one simple (top 5), no pagination needed for "Recently Created" usually
+    const String graphqlQuery = r'''
+      query SearchCreatedPRs($query: String!) {
+        search(query: $query, type: ISSUE, first: 5) {
+          nodes {
+            ... on PullRequest {
+              databaseId
+              number
+              title
+              url
+              state
+              mergedAt
+              createdAt
+              repository {
+                name
+                owner {
+                  login
+                }
+                url
+              }
+            }
+          }
+        }
+      }
+    ''';
+
+    final result = await client.query(QueryOptions(
+      document: gql(graphqlQuery),
+      variables: {'query': query},
+      fetchPolicy: FetchPolicy.networkOnly,
+    ));
+
+    if (result.hasException) {
+      throw Exception(result.exception.toString());
+    }
+
+    final List<CreatedPullRequestModel> createdPrs = [];
+    final nodes = result.data?['search']['nodes'] as List<dynamic>? ?? [];
+
+    for (final node in nodes) {
+      if (node == null) continue;
+      createdPrs.add(_mapToCreatedPrModel(node));
+    }
+
+    await _localStorage.cachePrData(_recentlyCreatedPrsKey, {
+      'data': createdPrs.map((e) => e.toJson()).toList(),
+      'timestamp': DateTime.now().toIso8601String(),
+    });
+
+    return createdPrs;
+  }
+
+  Future<List<CreatedPullRequestModel>> getCachedRecentlyCreatedPrs() async {
+    final data = await _localStorage.getCachedPrData(_recentlyCreatedPrsKey);
+    if (data == null) return [];
+
+    final list = data['data'] as List<dynamic>? ?? [];
+    return list.map((e) => CreatedPullRequestModel.fromJson(e)).toList();
+  }
+
+  Future<PaginatedResult<PullRequestModel>> _searchPullRequests(
+    String searchQuery, {
+    String? afterCursor,
+  }) async {
+    final client = await _graphQLService.client;
+
+    const String graphqlQuery = r'''
+      query SearchPRs($query: String!, $cursor: String) {
+        search(query: $query, type: ISSUE, first: 20, after: $cursor) {
+          pageInfo {
+            hasNextPage
+            endCursor
+          }
+          nodes {
+            ... on PullRequest {
+              databaseId
+              number
+              title
+              bodyText
+              state
+              url
+              createdAt
+              updatedAt
+              isDraft
+              author {
+                login
+                avatarUrl
+                url
+              }
+              repository {
+                name
+                owner {
+                  login
+                }
+                url
+              }
+              labels(first: 10) {
+                nodes {
+                  name
+                  color
+                  description
+                }
+              }
+            }
+          }
+        }
+      }
+    ''';
+
+    final result = await client.query(QueryOptions(
+      document: gql(graphqlQuery),
+      variables: {
+        'query': searchQuery,
+        'cursor': afterCursor,
+      },
+      fetchPolicy: FetchPolicy.networkOnly,
+    ));
+
+    if (result.hasException) {
+      throw Exception(result.exception.toString());
+    }
+
+    final List<PullRequestModel> prs = [];
+    final search = result.data?['search'];
+    final nodes = search?['nodes'] as List<dynamic>? ?? [];
+    final pageInfo = search?['pageInfo'];
+
+    for (final node in nodes) {
+      if (node == null) continue;
+      prs.add(_mapToPrModel(node));
+    }
+
+    return PaginatedResult(
+      items: prs,
+      hasNextPage: pageInfo?['hasNextPage'] as bool? ?? false,
+      endCursor: pageInfo?['endCursor'] as String?,
+    );
+  }
+  
+  // Public method for arbitrary search (server-side)
+  Future<PaginatedResult<PullRequestModel>> searchPullRequests(
+    String query, {
+    String? afterCursor,
+  }) async {
+    // Add type:pr if not present, though user might want to search issues too? 
+    // For this app (GitDesk) it's PR focused.
+    final fullQuery = query.contains('type:pr') ? query : '$query type:pr';
+    return _searchPullRequests(fullQuery, afterCursor: afterCursor);
+  }
+
+  // Mappers
+  
+  PullRequestModel _mapToPrModel(Map<String, dynamic> node) {
+    final author = node['author'] ?? {};
+    final repository = node['repository'] ?? {};
+    final labels = node['labels']?['nodes'] as List<dynamic>? ?? [];
+
+    return PullRequestModel(
+      id: node['databaseId'] as int,
+      number: node['number'] as int,
+      title: node['title'] as String,
+      body: node['bodyText'] as String? ?? '',
+      state: (node['state'] as String).toLowerCase(),
+      htmlUrl: node['url'] as String,
+      createdAt: DateTime.parse(node['createdAt'] as String),
+      updatedAt: DateTime.parse(node['updatedAt'] as String),
+      draft: node['isDraft'] as bool,
+      author: UserModel(
+        id: 0,
+        login: author['login'] as String,
+        avatarUrl: author['avatarUrl'] as String,
+        htmlUrl: author['url'] as String,
+      ),
+      repository: RepositoryModel(
+        fullName: '${repository['owner']['login']}/${repository['name']}',
+        htmlUrl: repository['url'] as String,
+      ),
+      labels: labels.map((l) => LabelModel(
+        id: 0,
+        name: l['name'] as String,
+        color: l['color'] as String,
+        description: l['description'] as String?,
+      )).toList(),
+    );
+  }
+
+  ReviewedPullRequestModel? _mapToReviewedPrModel(Map<String, dynamic> node, String currentUsername) {
+    final author = node['author'] ?? {};
+    final repository = node['repository'] ?? {};
+    final reviews = node['reviews']?['nodes'] as List<dynamic>? ?? [];
+
+    ReviewState reviewState = ReviewState.pending;
+    DateTime reviewedAt = DateTime.parse(node['updatedAt'] as String);
+
+    for (final review in reviews.reversed) {
+      final reviewerLogin = review['author']?['login'] as String?;
+      if (reviewerLogin == currentUsername) {
+        final state = review['state'] as String;
+        reviewedAt = DateTime.parse(review['submittedAt'] as String);
+        
+        switch (state) {
+          case 'APPROVED':
+            reviewState = ReviewState.approved;
+            break;
+          case 'CHANGES_REQUESTED':
+            reviewState = ReviewState.changesRequested;
+            break;
+          case 'COMMENTED':
+            reviewState = ReviewState.commented;
+            break;
+          default:
+            reviewState = ReviewState.pending;
+        }
+        break;
+      }
+    }
+
+    final state = (node['state'] as String).toLowerCase();
+    final isMerged = node['mergedAt'] != null;
+    
+    MergeState mergeState;
+    if (isMerged) {
+      mergeState = MergeState.merged;
+    } else if (state == 'closed') {
+      mergeState = MergeState.closed;
+    } else {
+      mergeState = MergeState.open;
+    }
+
+    return ReviewedPullRequestModel(
+      id: node['databaseId'] as int,
+      number: node['number'] as int,
+      title: node['title'] as String,
+      htmlUrl: node['url'] as String,
+      reviewedAt: reviewedAt,
+      reviewState: reviewState,
+      mergeState: mergeState,
+      author: UserModel(
+        id: 0,
+        login: author['login'] as String,
+        avatarUrl: author['avatarUrl'] as String,
+        htmlUrl: author['url'] as String,
+      ),
+      repository: RepositoryModel(
+        fullName: '${repository['owner']['login']}/${repository['name']}',
+        htmlUrl: repository['url'] as String,
+      ),
+    );
+  }
+
+  CreatedPullRequestModel _mapToCreatedPrModel(Map<String, dynamic> node) {
+    final repository = node['repository'] ?? {};
+    
+    final state = (node['state'] as String).toLowerCase();
+    final isMerged = node['mergedAt'] != null;
+    
+    MergeState mergeState;
+    if (isMerged) {
+      mergeState = MergeState.merged;
+    } else if (state == 'closed') {
+      mergeState = MergeState.closed;
+    } else {
+      mergeState = MergeState.open;
+    }
+
+    return CreatedPullRequestModel(
+      id: node['databaseId'] as int,
+      number: node['number'] as int,
+      title: node['title'] as String,
+      htmlUrl: node['url'] as String,
+      createdAt: DateTime.parse(node['createdAt'] as String),
+      mergeState: mergeState,
+      repository: RepositoryModel(
+        fullName: '${repository['owner']['login']}/${repository['name']}',
+        htmlUrl: repository['url'] as String,
+      ),
+    );
   }
 }

@@ -1,8 +1,9 @@
 import 'dart:async';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:github/github.dart';
 
 import '../../../core/constants/app_constants.dart';
 
@@ -19,16 +20,13 @@ class TokenRepository {
   Completer<void>? _cacheLoadCompleter;
 
   Future<void> _ensureCacheLoaded() async {
-    // If already loaded, return immediately
     if (_cacheLoadCompleter?.isCompleted == true) return;
 
-    // If loading is in progress, wait for it
     if (_cacheLoadCompleter != null) {
       await _cacheLoadCompleter!.future;
       return;
     }
 
-    // Start loading
     _cacheLoadCompleter = Completer<void>();
     try {
       _cachedToken = await _storage.read(key: AppConstants.tokenStorageKey);
@@ -71,17 +69,49 @@ class TokenRepository {
     _cachedUsername = null;
   }
 
-  Future<bool> validateToken(String token) async {
+  /// Validates the token by making a request to GitHub API
+  /// and checking for necessary scopes.
+  /// Returns a verification result string. Null means valid.
+  Future<String?> validateToken(String token) async {
     try {
-      final github = GitHub(auth: Authentication.withToken(token));
-      final user = await github.users.getCurrentUser();
-      if (user.login != null) {
-        await saveUsername(user.login!);
-        return true;
+      final response = await http.get(
+        Uri.parse('https://api.github.com/user'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/vnd.github+json',
+          'X-GitHub-Api-Version': '2022-11-28',
+        },
+      ).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body) as Map<String, dynamic>;
+        final login = data['login'] as String?;
+        if (login != null) {
+          await saveUsername(login);
+        } else {
+          return 'Invalid response from GitHub';
+        }
+
+        // Check scopes
+        final scopesHeader = response.headers['x-oauth-scopes'];
+        if (scopesHeader != null) {
+          final scopes = scopesHeader.split(',').map((s) => s.trim()).toList();
+          if (!scopes.contains('repo') && !scopes.contains('public_repo')) {
+            return 'Token is valid but missing "repo" scope. Private repos may not work.';
+          }
+          // "read:user" is implied for /user access usually?
+        }
+        
+        return null; // Valid
+      } else if (response.statusCode == 401) {
+        return 'Invalid token';
+      } else if (response.statusCode == 403) {
+        return 'Rate limit exceeded or forbidden';
+      } else {
+        return 'Validation failed: ${response.statusCode}';
       }
-      return false;
     } catch (e) {
-      return false;
+      return 'Connection error: $e';
     }
   }
 

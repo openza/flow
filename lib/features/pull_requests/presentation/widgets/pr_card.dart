@@ -4,7 +4,6 @@ import 'package:timeago/timeago.dart' as timeago;
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/constants/app_constants.dart';
-import '../../../../core/theme/app_theme.dart';
 import '../../domain/models/pull_request.dart';
 
 class PrCard extends StatefulWidget {
@@ -69,6 +68,10 @@ class _PrCardState extends State<PrCard> with SingleTickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
+
     return FadeTransition(
       opacity: _fadeAnimation,
       child: SlideTransition(
@@ -83,10 +86,10 @@ class _PrCardState extends State<PrCard> with SingleTickerProviderStateMixin {
               duration: AppConstants.shortAnimation,
               margin: const EdgeInsets.only(bottom: AppConstants.smallPadding),
               decoration: BoxDecoration(
-                color: _isHovered ? AppTheme.surface : AppTheme.card,
+                color: _isHovered ? colorScheme.surface : theme.cardTheme.color,
                 borderRadius: BorderRadius.circular(AppConstants.cardBorderRadius),
                 border: Border.all(
-                  color: _isHovered ? AppTheme.primary.withValues(alpha: 0.5) : AppTheme.border,
+                  color: _isHovered ? colorScheme.primary.withValues(alpha: 0.5) : colorScheme.outline,
                   width: 1,
                 ),
               ),
@@ -101,14 +104,14 @@ class _PrCardState extends State<PrCard> with SingleTickerProviderStateMixin {
                         Icon(
                           Icons.book_outlined,
                           size: 14,
-                          color: AppTheme.textMuted,
+                          color: textTheme.bodySmall?.color,
                         ),
                         const SizedBox(width: 6),
                         Expanded(
                           child: Text(
                             widget.pr.repository.fullName,
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: AppTheme.textSecondary,
+                            style: textTheme.bodySmall?.copyWith(
+                                  color: textTheme.bodyMedium?.color,
                                 ),
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -116,7 +119,7 @@ class _PrCardState extends State<PrCard> with SingleTickerProviderStateMixin {
                         // Time ago
                         Text(
                           timeago.format(widget.pr.updatedAt),
-                          style: Theme.of(context).textTheme.bodySmall,
+                          style: textTheme.bodySmall,
                         ),
                       ],
                     ),
@@ -136,8 +139,8 @@ class _PrCardState extends State<PrCard> with SingleTickerProviderStateMixin {
                                 : Icons.merge_rounded,
                             size: 16,
                             color: widget.pr.draft
-                                ? AppTheme.textMuted
-                                : AppTheme.success,
+                                ? textTheme.bodySmall?.color
+                                : colorScheme.secondary, // Green
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -151,16 +154,16 @@ class _PrCardState extends State<PrCard> with SingleTickerProviderStateMixin {
                                   children: [
                                     TextSpan(
                                       text: widget.pr.title,
-                                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                      style: textTheme.titleMedium?.copyWith(
                                             color: _isHovered
-                                                ? AppTheme.primary
-                                                : AppTheme.textPrimary,
+                                                ? colorScheme.primary
+                                                : textTheme.bodyLarge?.color,
                                           ),
                                     ),
                                     TextSpan(
                                       text: ' #${widget.pr.number}',
-                                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                            color: AppTheme.textMuted,
+                                      style: textTheme.bodyMedium?.copyWith(
+                                            color: textTheme.bodySmall?.color,
                                           ),
                                     ),
                                   ],
@@ -189,12 +192,12 @@ class _PrCardState extends State<PrCard> with SingleTickerProviderStateMixin {
                             placeholder: (context, url) => Container(
                               width: AppConstants.smallAvatarSize,
                               height: AppConstants.smallAvatarSize,
-                              color: AppTheme.surface,
+                              color: colorScheme.surface,
                             ),
                             errorWidget: (context, url, error) => Container(
                               width: AppConstants.smallAvatarSize,
                               height: AppConstants.smallAvatarSize,
-                              color: AppTheme.surface,
+                              color: colorScheme.surface,
                               child: const Icon(Icons.person, size: 12),
                             ),
                           ),
@@ -202,7 +205,7 @@ class _PrCardState extends State<PrCard> with SingleTickerProviderStateMixin {
                         const SizedBox(width: 6),
                         Text(
                           widget.pr.author.login,
-                          style: Theme.of(context).textTheme.bodySmall,
+                          style: textTheme.bodySmall,
                         ),
 
                         // Draft badge
@@ -211,13 +214,13 @@ class _PrCardState extends State<PrCard> with SingleTickerProviderStateMixin {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
-                              color: AppTheme.surface,
+                              color: colorScheme.surface,
                               borderRadius: BorderRadius.circular(4),
-                              border: Border.all(color: AppTheme.border),
+                              border: Border.all(color: colorScheme.outline),
                             ),
                             child: Text(
                               'Draft',
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              style: textTheme.bodySmall?.copyWith(
                                     fontSize: 10,
                                     fontWeight: FontWeight.w500,
                                   ),
@@ -307,16 +310,16 @@ class _ReviewedPrCardState extends State<ReviewedPrCard> {
     }
   }
 
-  Color _getReviewStateColor() {
+  Color _getReviewStateColor(ColorScheme scheme) {
     switch (widget.pr.reviewState) {
       case ReviewState.approved:
-        return AppTheme.success;
+        return scheme.secondary; // Success
       case ReviewState.changesRequested:
-        return AppTheme.error;
+        return scheme.error;
       case ReviewState.commented:
-        return AppTheme.warning;
+        return scheme.tertiary; // Warning
       case ReviewState.pending:
-        return AppTheme.textMuted;
+        return scheme.onSurface.withValues(alpha: 0.6); // Muted
     }
   }
 
@@ -346,14 +349,14 @@ class _ReviewedPrCardState extends State<ReviewedPrCard> {
     }
   }
 
-  Color _getMergeStateColor() {
+  Color _getMergeStateColor(ColorScheme scheme) {
     switch (widget.pr.mergeState) {
       case MergeState.merged:
-        return AppTheme.primary; // Blue/purple for merged
+        return scheme.primary; // Blue/purple for merged
       case MergeState.open:
-        return AppTheme.warning; // Yellow/orange for open
+        return scheme.tertiary; // Warning/Yellow for open
       case MergeState.closed:
-        return AppTheme.error; // Red for closed
+        return scheme.error; // Red for closed
     }
   }
 
@@ -381,6 +384,10 @@ class _ReviewedPrCardState extends State<ReviewedPrCard> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
+
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
@@ -391,10 +398,10 @@ class _ReviewedPrCardState extends State<ReviewedPrCard> {
           duration: AppConstants.shortAnimation,
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
-            color: _isHovered ? AppTheme.surface : AppTheme.card,
+            color: _isHovered ? colorScheme.surface : theme.cardTheme.color,
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
-              color: _isHovered ? AppTheme.primary.withValues(alpha: 0.5) : AppTheme.border,
+              color: _isHovered ? colorScheme.primary.withValues(alpha: 0.5) : colorScheme.outline,
             ),
           ),
           child: Row(
@@ -403,7 +410,7 @@ class _ReviewedPrCardState extends State<ReviewedPrCard> {
               Icon(
                 _getMergeStateIcon(),
                 size: 16,
-                color: _getMergeStateColor(),
+                color: _getMergeStateColor(colorScheme),
               ),
               const SizedBox(width: 10),
 
@@ -415,8 +422,8 @@ class _ReviewedPrCardState extends State<ReviewedPrCard> {
                     // Title
                     Text(
                       widget.pr.title,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: _isHovered ? AppTheme.primary : AppTheme.textPrimary,
+                      style: textTheme.bodyMedium?.copyWith(
+                            color: _isHovered ? colorScheme.primary : textTheme.bodyLarge?.color,
                             fontWeight: FontWeight.w500,
                           ),
                       maxLines: 1,
@@ -426,8 +433,8 @@ class _ReviewedPrCardState extends State<ReviewedPrCard> {
                     // Repo and PR number
                     Text(
                       '${widget.pr.repository.fullName} #${widget.pr.number}',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppTheme.textMuted,
+                      style: textTheme.bodySmall?.copyWith(
+                            color: textTheme.bodySmall?.color,
                             fontSize: 11,
                           ),
                       maxLines: 1,
@@ -445,10 +452,10 @@ class _ReviewedPrCardState extends State<ReviewedPrCard> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: _getReviewStateColor().withValues(alpha: 0.15),
+                    color: _getReviewStateColor(colorScheme).withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(4),
                     border: Border.all(
-                      color: _getReviewStateColor().withValues(alpha: 0.3),
+                      color: _getReviewStateColor(colorScheme).withValues(alpha: 0.3),
                     ),
                   ),
                   child: Row(
@@ -458,13 +465,13 @@ class _ReviewedPrCardState extends State<ReviewedPrCard> {
                       Icon(
                         _getReviewStateIcon(),
                         size: 12,
-                        color: _getReviewStateColor(),
+                        color: _getReviewStateColor(colorScheme),
                       ),
                       const SizedBox(width: 4),
                       Text(
                         _getReviewStateText(),
                         style: TextStyle(
-                          color: _getReviewStateColor(),
+                          color: _getReviewStateColor(colorScheme),
                           fontSize: 11,
                           fontWeight: FontWeight.w500,
                         ),
@@ -482,16 +489,16 @@ class _ReviewedPrCardState extends State<ReviewedPrCard> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: _getMergeStateColor().withValues(alpha: 0.15),
+                    color: _getMergeStateColor(colorScheme).withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(4),
                     border: Border.all(
-                      color: _getMergeStateColor().withValues(alpha: 0.3),
+                      color: _getMergeStateColor(colorScheme).withValues(alpha: 0.3),
                     ),
                   ),
                   child: Text(
                     _getMergeStateText(),
                     style: TextStyle(
-                      color: _getMergeStateColor(),
+                      color: _getMergeStateColor(colorScheme),
                       fontSize: 11,
                       fontWeight: FontWeight.w500,
                     ),
@@ -517,12 +524,12 @@ class _ReviewedPrCardState extends State<ReviewedPrCard> {
                         placeholder: (context, url) => Container(
                           width: 20,
                           height: 20,
-                          color: AppTheme.surface,
+                          color: colorScheme.surface,
                         ),
                         errorWidget: (context, url, error) => Container(
                           width: 20,
                           height: 20,
-                          color: AppTheme.surface,
+                          color: colorScheme.surface,
                           child: const Icon(Icons.person, size: 12),
                         ),
                       ),
@@ -531,8 +538,8 @@ class _ReviewedPrCardState extends State<ReviewedPrCard> {
                     Expanded(
                       child: Text(
                         widget.pr.author.login,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: AppTheme.textSecondary,
+                        style: textTheme.bodySmall?.copyWith(
+                              color: textTheme.bodyMedium?.color,
                               fontSize: 11,
                             ),
                         overflow: TextOverflow.ellipsis,
@@ -549,8 +556,8 @@ class _ReviewedPrCardState extends State<ReviewedPrCard> {
                 width: 75,
                 child: Text(
                   timeago.format(widget.pr.reviewedAt),
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppTheme.textMuted,
+                  style: textTheme.bodySmall?.copyWith(
+                        color: textTheme.bodySmall?.color,
                         fontSize: 11,
                       ),
                   textAlign: TextAlign.right,
@@ -587,14 +594,14 @@ class _CreatedPrCardState extends State<CreatedPrCard> {
     }
   }
 
-  Color _getMergeStateColor() {
+  Color _getMergeStateColor(ColorScheme scheme) {
     switch (widget.pr.mergeState) {
       case MergeState.merged:
-        return AppTheme.primary; // Blue/purple for merged
+        return scheme.primary; // Blue/purple for merged
       case MergeState.open:
-        return AppTheme.warning; // Yellow/orange for open
+        return scheme.tertiary; // Warning/Yellow for open
       case MergeState.closed:
-        return AppTheme.error; // Red for closed
+        return scheme.error; // Red for closed
     }
   }
 
@@ -622,6 +629,10 @@ class _CreatedPrCardState extends State<CreatedPrCard> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
+
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
@@ -632,10 +643,10 @@ class _CreatedPrCardState extends State<CreatedPrCard> {
           duration: AppConstants.shortAnimation,
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
-            color: _isHovered ? AppTheme.surface : AppTheme.card,
+            color: _isHovered ? colorScheme.surface : theme.cardTheme.color,
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
-              color: _isHovered ? AppTheme.primary.withValues(alpha: 0.5) : AppTheme.border,
+              color: _isHovered ? colorScheme.primary.withValues(alpha: 0.5) : colorScheme.outline,
             ),
           ),
           child: Row(
@@ -644,7 +655,7 @@ class _CreatedPrCardState extends State<CreatedPrCard> {
               Icon(
                 _getMergeStateIcon(),
                 size: 16,
-                color: _getMergeStateColor(),
+                color: _getMergeStateColor(colorScheme),
               ),
               const SizedBox(width: 10),
 
@@ -656,8 +667,8 @@ class _CreatedPrCardState extends State<CreatedPrCard> {
                     // Title
                     Text(
                       widget.pr.title,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: _isHovered ? AppTheme.primary : AppTheme.textPrimary,
+                      style: textTheme.bodyMedium?.copyWith(
+                            color: _isHovered ? colorScheme.primary : textTheme.bodyLarge?.color,
                             fontWeight: FontWeight.w500,
                           ),
                       maxLines: 1,
@@ -667,8 +678,8 @@ class _CreatedPrCardState extends State<CreatedPrCard> {
                     // Repo and PR number
                     Text(
                       '${widget.pr.repository.fullName} #${widget.pr.number}',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppTheme.textMuted,
+                      style: textTheme.bodySmall?.copyWith(
+                            color: textTheme.bodySmall?.color,
                             fontSize: 11,
                           ),
                       maxLines: 1,
@@ -686,16 +697,16 @@ class _CreatedPrCardState extends State<CreatedPrCard> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: _getMergeStateColor().withValues(alpha: 0.15),
+                    color: _getMergeStateColor(colorScheme).withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(4),
                     border: Border.all(
-                      color: _getMergeStateColor().withValues(alpha: 0.3),
+                      color: _getMergeStateColor(colorScheme).withValues(alpha: 0.3),
                     ),
                   ),
                   child: Text(
                     _getMergeStateText(),
                     style: TextStyle(
-                      color: _getMergeStateColor(),
+                      color: _getMergeStateColor(colorScheme),
                       fontSize: 11,
                       fontWeight: FontWeight.w500,
                     ),
@@ -711,8 +722,8 @@ class _CreatedPrCardState extends State<CreatedPrCard> {
                 width: 75,
                 child: Text(
                   timeago.format(widget.pr.createdAt),
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppTheme.textMuted,
+                  style: textTheme.bodySmall?.copyWith(
+                        color: textTheme.bodySmall?.color,
                         fontSize: 11,
                       ),
                   textAlign: TextAlign.right,
