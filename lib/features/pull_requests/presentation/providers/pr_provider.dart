@@ -192,3 +192,65 @@ final filteredCreatedPrListProvider =
     }).toList();
   });
 });
+
+// ============================================================================
+// Reviewed PRs Provider (Last 5 PRs reviewed by user)
+// ============================================================================
+
+final reviewedPrListProvider =
+    AsyncNotifierProvider<ReviewedPrListNotifier, List<ReviewedPullRequestModel>>(() {
+  return ReviewedPrListNotifier();
+});
+
+class ReviewedPrListNotifier extends AsyncNotifier<List<ReviewedPullRequestModel>> {
+  @override
+  Future<List<ReviewedPullRequestModel>> build() async {
+    return await _fetchReviewedPrs();
+  }
+
+  Future<List<ReviewedPullRequestModel>> _fetchReviewedPrs() async {
+    final prRepo = ref.read(prRepositoryProvider);
+    return await prRepo.getReviewedPrs();
+  }
+
+  Future<void> refresh() async {
+    state = const AsyncValue.loading();
+    try {
+      final prs = await _fetchReviewedPrs();
+      state = AsyncValue.data(prs);
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+    }
+  }
+}
+
+// ============================================================================
+// Recently Created PRs Provider (Last 5 PRs created by user, any state)
+// ============================================================================
+
+final recentlyCreatedPrListProvider =
+    AsyncNotifierProvider<RecentlyCreatedPrListNotifier, List<CreatedPullRequestModel>>(() {
+  return RecentlyCreatedPrListNotifier();
+});
+
+class RecentlyCreatedPrListNotifier extends AsyncNotifier<List<CreatedPullRequestModel>> {
+  @override
+  Future<List<CreatedPullRequestModel>> build() async {
+    return await _fetchRecentlyCreatedPrs();
+  }
+
+  Future<List<CreatedPullRequestModel>> _fetchRecentlyCreatedPrs() async {
+    final prRepo = ref.read(prRepositoryProvider);
+    return await prRepo.getRecentlyCreatedPrs();
+  }
+
+  Future<void> refresh() async {
+    state = const AsyncValue.loading();
+    try {
+      final prs = await _fetchRecentlyCreatedPrs();
+      state = AsyncValue.data(prs);
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+    }
+  }
+}

@@ -94,6 +94,137 @@ class RepositoryModel {
   String get name => fullName.split('/').lastOrNull ?? '';
 }
 
+enum ReviewState {
+  approved,
+  changesRequested,
+  commented,
+  pending,
+}
+
+enum MergeState {
+  merged,
+  open,
+  closed,
+}
+
+class ReviewedPullRequestModel {
+  final int id;
+  final int number;
+  final String title;
+  final String htmlUrl;
+  final DateTime reviewedAt;
+  final ReviewState reviewState;
+  final MergeState mergeState;
+  final UserModel author;
+  final RepositoryModel repository;
+
+  ReviewedPullRequestModel({
+    required this.id,
+    required this.number,
+    required this.title,
+    required this.htmlUrl,
+    required this.reviewedAt,
+    required this.reviewState,
+    required this.mergeState,
+    required this.author,
+    required this.repository,
+  });
+
+  factory ReviewedPullRequestModel.fromGitHubIssue(
+    Map<String, dynamic> json, {
+    required ReviewState reviewState,
+    required DateTime reviewedAt,
+  }) {
+    final repositoryUrl = json['repository_url'] as String? ?? '';
+    final repoParts = repositoryUrl.split('/');
+    final repoName = repoParts.length >= 2
+        ? '${repoParts[repoParts.length - 2]}/${repoParts.last}'
+        : '';
+
+    final state = json['state'] as String? ?? 'open';
+    final pullRequest = json['pull_request'] as Map<String, dynamic>?;
+    final isMerged = pullRequest?['merged_at'] != null;
+
+    MergeState mergeState;
+    if (isMerged) {
+      mergeState = MergeState.merged;
+    } else if (state == 'closed') {
+      mergeState = MergeState.closed;
+    } else {
+      mergeState = MergeState.open;
+    }
+
+    return ReviewedPullRequestModel(
+      id: json['id'] as int,
+      number: json['number'] as int,
+      title: json['title'] as String? ?? '',
+      htmlUrl: json['html_url'] as String? ?? '',
+      reviewedAt: reviewedAt,
+      reviewState: reviewState,
+      mergeState: mergeState,
+      author: UserModel.fromJson(json['user'] as Map<String, dynamic>? ?? {}),
+      repository: RepositoryModel(
+        fullName: repoName,
+        htmlUrl: repositoryUrl,
+      ),
+    );
+  }
+}
+
+class CreatedPullRequestModel {
+  final int id;
+  final int number;
+  final String title;
+  final String htmlUrl;
+  final DateTime createdAt;
+  final MergeState mergeState;
+  final RepositoryModel repository;
+
+  CreatedPullRequestModel({
+    required this.id,
+    required this.number,
+    required this.title,
+    required this.htmlUrl,
+    required this.createdAt,
+    required this.mergeState,
+    required this.repository,
+  });
+
+  factory CreatedPullRequestModel.fromGitHubIssue(Map<String, dynamic> json) {
+    final repositoryUrl = json['repository_url'] as String? ?? '';
+    final repoParts = repositoryUrl.split('/');
+    final repoName = repoParts.length >= 2
+        ? '${repoParts[repoParts.length - 2]}/${repoParts.last}'
+        : '';
+
+    final state = json['state'] as String? ?? 'open';
+    final pullRequest = json['pull_request'] as Map<String, dynamic>?;
+    final isMerged = pullRequest?['merged_at'] != null;
+
+    MergeState mergeState;
+    if (isMerged) {
+      mergeState = MergeState.merged;
+    } else if (state == 'closed') {
+      mergeState = MergeState.closed;
+    } else {
+      mergeState = MergeState.open;
+    }
+
+    return CreatedPullRequestModel(
+      id: json['id'] as int,
+      number: json['number'] as int,
+      title: json['title'] as String? ?? '',
+      htmlUrl: json['html_url'] as String? ?? '',
+      createdAt: DateTime.parse(json['created_at'] as String),
+      mergeState: mergeState,
+      repository: RepositoryModel(
+        fullName: repoName,
+        htmlUrl: repositoryUrl,
+      ),
+    );
+  }
+}
+
 class LabelModel {
   final int id;
   final String name;

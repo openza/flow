@@ -37,13 +37,17 @@ class _PrListScreenState extends ConsumerState<PrListScreen>
   Future<void> _refresh() async {
     setState(() => _isRefreshing = true);
 
-    // Refresh both lists
+    // Refresh main lists first (don't wait for reviewed PRs as they take longer)
     await Future.wait([
       ref.read(prListProvider.notifier).refresh(),
       ref.read(createdPrListProvider.notifier).refresh(),
     ]);
 
     setState(() => _isRefreshing = false);
+
+    // Refresh reviewed and recently created PRs in background (don't block UI)
+    ref.read(reviewedPrListProvider.notifier).refresh();
+    ref.read(recentlyCreatedPrListProvider.notifier).refresh();
   }
 
   void _showLogoutDialog() {
@@ -261,18 +265,10 @@ class _PrListScreenState extends ConsumerState<PrListScreen>
             child: TabBarView(
               controller: _tabController,
               children: [
-                // Review Requests tab
-                _buildPrList(
-                  ref.watch(filteredPrListProvider),
-                  emptyMessage: 'No pull requests waiting for your review',
-                  emptyIcon: Icons.check_circle_outline_rounded,
-                ),
-                // Created PRs tab
-                _buildPrList(
-                  ref.watch(filteredCreatedPrListProvider),
-                  emptyMessage: 'You have no open pull requests',
-                  emptyIcon: Icons.create_rounded,
-                ),
+                // Review Requests tab (with recently reviewed section)
+                _buildReviewRequestsTab(),
+                // Created PRs tab (with recently created section)
+                _buildCreatedTab(),
               ],
             ),
           ),
@@ -281,25 +277,32 @@ class _PrListScreenState extends ConsumerState<PrListScreen>
     );
   }
 
-  Widget _buildPrList(
-    AsyncValue<List<PullRequestModel>> prList, {
-    required String emptyMessage,
-    required IconData emptyIcon,
-  }) {
-    return prList.when(
-      data: (prs) {
-        if (prs.isEmpty) {
-          return _buildEmptyState(emptyMessage, emptyIcon);
-        }
-        return ListView.builder(
+  Widget _buildReviewRequestsTab() {
+    final pendingReviews = ref.watch(filteredPrListProvider);
+
+    return pendingReviews.when(
+      data: (pendingPrs) {
+        // Only watch reviewedPrListProvider after pending reviews are loaded
+        final reviewedPrs = ref.watch(reviewedPrListProvider);
+
+        return ListView(
           padding: const EdgeInsets.all(AppConstants.defaultPadding),
-          itemCount: prs.length,
-          itemBuilder: (context, index) {
-            return PrCard(
-              pr: prs[index],
-              index: index,
-            );
-          },
+          children: [
+            // Pending reviews section
+            if (pendingPrs.isNotEmpty) ...[
+              for (int i = 0; i < pendingPrs.length; i++)
+                PrCard(pr: pendingPrs[i], index: i),
+            ] else ...[
+              _buildInlineEmptyState(
+                'No pull requests waiting for your review',
+                Icons.check_circle_outline_rounded,
+              ),
+            ],
+
+            // Recently reviewed section
+            const SizedBox(height: AppConstants.defaultPadding),
+            _buildRecentlyReviewedSection(reviewedPrs),
+          ],
         );
       },
       loading: () => _buildLoadingState(),
@@ -307,42 +310,205 @@ class _PrListScreenState extends ConsumerState<PrListScreen>
     );
   }
 
-  Widget _buildEmptyState(String message, IconData icon) {
-    final searchQuery = ref.watch(prSearchQueryProvider);
-    final isSearching = searchQuery.isNotEmpty;
+  Widget _buildRecentlyReviewedSection(AsyncValue<List<ReviewedPullRequestModel>> reviewedPrs) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Section header
+        Row(
+          children: [
+            Icon(
+              Icons.history_rounded,
+              size: 16,
+              color: AppTheme.textMuted,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              'Recently Reviewed',
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    color: AppTheme.textSecondary,
+                    fontWeight: FontWeight.w600,
+                  ),
+            ),
+          ],
+        ),
+        const SizedBox(height: AppConstants.smallPadding),
 
-    return Center(
+        // Reviewed PRs list
+        reviewedPrs.when(
+          data: (prs) {
+            if (prs.isEmpty) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                child: Text(
+                  'No recently reviewed pull requests',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppTheme.textMuted,
+                      ),
+                ),
+              );
+            }
+            return Column(
+              children: [
+                for (final pr in prs) ...[
+                  ReviewedPrCard(pr: pr),
+                  const SizedBox(height: 6),
+                ],
+              ],
+            );
+          },
+          loading: () => const Padding(
+            padding: EdgeInsets.symmetric(vertical: 16),
+            child: Center(
+              child: SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            ),
+          ),
+          error: (error, stack) => Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: Text(
+              'Failed to load reviewed PRs',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: AppTheme.error,
+                  ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCreatedTab() {
+    final createdPrs = ref.watch(filteredCreatedPrListProvider);
+
+    return createdPrs.when(
+      data: (openPrs) {
+        // Only watch recentlyCreatedPrListProvider after open PRs are loaded
+        final recentlyCreatedPrs = ref.watch(recentlyCreatedPrListProvider);
+
+        return ListView(
+          padding: const EdgeInsets.all(AppConstants.defaultPadding),
+          children: [
+            // Open PRs section
+            if (openPrs.isNotEmpty) ...[
+              for (int i = 0; i < openPrs.length; i++)
+                PrCard(pr: openPrs[i], index: i),
+            ] else ...[
+              _buildInlineEmptyState(
+                'You have no open pull requests',
+                Icons.create_rounded,
+              ),
+            ],
+
+            // Recently created section
+            const SizedBox(height: AppConstants.defaultPadding),
+            _buildRecentlyCreatedSection(recentlyCreatedPrs),
+          ],
+        );
+      },
+      loading: () => _buildLoadingState(),
+      error: (error, stack) => _buildErrorState(error),
+    );
+  }
+
+  Widget _buildRecentlyCreatedSection(AsyncValue<List<CreatedPullRequestModel>> recentlyCreatedPrs) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Section header
+        Row(
+          children: [
+            Icon(
+              Icons.history_rounded,
+              size: 16,
+              color: AppTheme.textMuted,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              'Recently Created',
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    color: AppTheme.textSecondary,
+                    fontWeight: FontWeight.w600,
+                  ),
+            ),
+          ],
+        ),
+        const SizedBox(height: AppConstants.smallPadding),
+
+        // Recently created PRs list
+        recentlyCreatedPrs.when(
+          data: (prs) {
+            if (prs.isEmpty) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                child: Text(
+                  'No recently created pull requests',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppTheme.textMuted,
+                      ),
+                ),
+              );
+            }
+            return Column(
+              children: [
+                for (final pr in prs) ...[
+                  CreatedPrCard(pr: pr),
+                  const SizedBox(height: 6),
+                ],
+              ],
+            );
+          },
+          loading: () => const Padding(
+            padding: EdgeInsets.symmetric(vertical: 16),
+            child: Center(
+              child: SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            ),
+          ),
+          error: (error, stack) => Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: Text(
+              'Failed to load recently created PRs',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: AppTheme.error,
+                  ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildInlineEmptyState(String message, IconData icon) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 48),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
-            isSearching ? Icons.search_off_rounded : icon,
-            size: 64,
+            icon,
+            size: 48,
             color: AppTheme.textMuted,
           ),
-          const SizedBox(height: AppConstants.defaultPadding),
+          const SizedBox(height: 12),
           Text(
-            isSearching ? 'No matching pull requests' : 'All caught up!',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+            'All caught up!',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   color: AppTheme.textSecondary,
                 ),
           ),
-          const SizedBox(height: AppConstants.smallPadding),
+          const SizedBox(height: 4),
           Text(
-            isSearching ? 'Try a different search term' : message,
-            style: Theme.of(context).textTheme.bodyMedium,
+            message,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppTheme.textMuted,
+                ),
           ),
-          if (isSearching) ...[
-            const SizedBox(height: AppConstants.defaultPadding),
-            TextButton.icon(
-              onPressed: () {
-                _searchController.clear();
-                ref.read(prSearchQueryProvider.notifier).state = '';
-              },
-              icon: const Icon(Icons.clear_rounded, size: 16),
-              label: const Text('Clear search'),
-            ),
-          ],
         ],
       ),
     );

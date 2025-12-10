@@ -283,3 +283,445 @@ class _LabelChip extends StatelessWidget {
     );
   }
 }
+
+/// Compact card for displaying reviewed PRs with review and merge status
+class ReviewedPrCard extends StatefulWidget {
+  final ReviewedPullRequestModel pr;
+
+  const ReviewedPrCard({
+    super.key,
+    required this.pr,
+  });
+
+  @override
+  State<ReviewedPrCard> createState() => _ReviewedPrCardState();
+}
+
+class _ReviewedPrCardState extends State<ReviewedPrCard> {
+  bool _isHovered = false;
+
+  Future<void> _openPr() async {
+    final uri = Uri.parse(widget.pr.htmlUrl);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
+  Color _getReviewStateColor() {
+    switch (widget.pr.reviewState) {
+      case ReviewState.approved:
+        return AppTheme.success;
+      case ReviewState.changesRequested:
+        return AppTheme.error;
+      case ReviewState.commented:
+        return AppTheme.warning;
+      case ReviewState.pending:
+        return AppTheme.textMuted;
+    }
+  }
+
+  IconData _getReviewStateIcon() {
+    switch (widget.pr.reviewState) {
+      case ReviewState.approved:
+        return Icons.check_circle;
+      case ReviewState.changesRequested:
+        return Icons.change_circle;
+      case ReviewState.commented:
+        return Icons.comment;
+      case ReviewState.pending:
+        return Icons.pending;
+    }
+  }
+
+  String _getReviewStateText() {
+    switch (widget.pr.reviewState) {
+      case ReviewState.approved:
+        return 'Approved';
+      case ReviewState.changesRequested:
+        return 'Changes';
+      case ReviewState.commented:
+        return 'Commented';
+      case ReviewState.pending:
+        return 'Pending';
+    }
+  }
+
+  Color _getMergeStateColor() {
+    switch (widget.pr.mergeState) {
+      case MergeState.merged:
+        return AppTheme.primary; // Blue/purple for merged
+      case MergeState.open:
+        return AppTheme.warning; // Yellow/orange for open
+      case MergeState.closed:
+        return AppTheme.error; // Red for closed
+    }
+  }
+
+  IconData _getMergeStateIcon() {
+    switch (widget.pr.mergeState) {
+      case MergeState.merged:
+        return Icons.merge;
+      case MergeState.open:
+        return Icons.circle_outlined;
+      case MergeState.closed:
+        return Icons.cancel_outlined;
+    }
+  }
+
+  String _getMergeStateText() {
+    switch (widget.pr.mergeState) {
+      case MergeState.merged:
+        return 'Merged';
+      case MergeState.open:
+        return 'Open';
+      case MergeState.closed:
+        return 'Closed';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: _openPr,
+        child: AnimatedContainer(
+          duration: AppConstants.shortAnimation,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            color: _isHovered ? AppTheme.surface : AppTheme.card,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: _isHovered ? AppTheme.primary.withValues(alpha: 0.5) : AppTheme.border,
+            ),
+          ),
+          child: Row(
+            children: [
+              // Merge state icon
+              Icon(
+                _getMergeStateIcon(),
+                size: 16,
+                color: _getMergeStateColor(),
+              ),
+              const SizedBox(width: 10),
+
+              // PR info
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Title
+                    Text(
+                      widget.pr.title,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: _isHovered ? AppTheme.primary : AppTheme.textPrimary,
+                            fontWeight: FontWeight.w500,
+                          ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    // Repo and PR number
+                    Text(
+                      '${widget.pr.repository.fullName} #${widget.pr.number}',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: AppTheme.textMuted,
+                            fontSize: 11,
+                          ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(width: 12),
+
+              // Review status badge - fixed width
+              SizedBox(
+                width: 90,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: _getReviewStateColor().withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(4),
+                    border: Border.all(
+                      color: _getReviewStateColor().withValues(alpha: 0.3),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        _getReviewStateIcon(),
+                        size: 12,
+                        color: _getReviewStateColor(),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        _getReviewStateText(),
+                        style: TextStyle(
+                          color: _getReviewStateColor(),
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              const SizedBox(width: 8),
+
+              // Merge status badge - fixed width
+              SizedBox(
+                width: 60,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: _getMergeStateColor().withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(4),
+                    border: Border.all(
+                      color: _getMergeStateColor().withValues(alpha: 0.3),
+                    ),
+                  ),
+                  child: Text(
+                    _getMergeStateText(),
+                    style: TextStyle(
+                      color: _getMergeStateColor(),
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
+
+              const SizedBox(width: 12),
+
+              // Author with avatar - fixed width
+              SizedBox(
+                width: 140,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: CachedNetworkImage(
+                        imageUrl: widget.pr.author.avatarUrl,
+                        width: 20,
+                        height: 20,
+                        placeholder: (context, url) => Container(
+                          width: 20,
+                          height: 20,
+                          color: AppTheme.surface,
+                        ),
+                        errorWidget: (context, url, error) => Container(
+                          width: 20,
+                          height: 20,
+                          color: AppTheme.surface,
+                          child: const Icon(Icons.person, size: 12),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        widget.pr.author.login,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: AppTheme.textSecondary,
+                              fontSize: 11,
+                            ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(width: 8),
+
+              // Time ago - fixed width
+              SizedBox(
+                width: 75,
+                child: Text(
+                  timeago.format(widget.pr.reviewedAt),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppTheme.textMuted,
+                        fontSize: 11,
+                      ),
+                  textAlign: TextAlign.right,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Compact card for displaying recently created PRs with merge status
+class CreatedPrCard extends StatefulWidget {
+  final CreatedPullRequestModel pr;
+
+  const CreatedPrCard({
+    super.key,
+    required this.pr,
+  });
+
+  @override
+  State<CreatedPrCard> createState() => _CreatedPrCardState();
+}
+
+class _CreatedPrCardState extends State<CreatedPrCard> {
+  bool _isHovered = false;
+
+  Future<void> _openPr() async {
+    final uri = Uri.parse(widget.pr.htmlUrl);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
+  Color _getMergeStateColor() {
+    switch (widget.pr.mergeState) {
+      case MergeState.merged:
+        return AppTheme.primary; // Blue/purple for merged
+      case MergeState.open:
+        return AppTheme.warning; // Yellow/orange for open
+      case MergeState.closed:
+        return AppTheme.error; // Red for closed
+    }
+  }
+
+  IconData _getMergeStateIcon() {
+    switch (widget.pr.mergeState) {
+      case MergeState.merged:
+        return Icons.merge;
+      case MergeState.open:
+        return Icons.circle_outlined;
+      case MergeState.closed:
+        return Icons.cancel_outlined;
+    }
+  }
+
+  String _getMergeStateText() {
+    switch (widget.pr.mergeState) {
+      case MergeState.merged:
+        return 'Merged';
+      case MergeState.open:
+        return 'Open';
+      case MergeState.closed:
+        return 'Closed';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: _openPr,
+        child: AnimatedContainer(
+          duration: AppConstants.shortAnimation,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            color: _isHovered ? AppTheme.surface : AppTheme.card,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: _isHovered ? AppTheme.primary.withValues(alpha: 0.5) : AppTheme.border,
+            ),
+          ),
+          child: Row(
+            children: [
+              // Merge state icon
+              Icon(
+                _getMergeStateIcon(),
+                size: 16,
+                color: _getMergeStateColor(),
+              ),
+              const SizedBox(width: 10),
+
+              // PR info
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Title
+                    Text(
+                      widget.pr.title,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: _isHovered ? AppTheme.primary : AppTheme.textPrimary,
+                            fontWeight: FontWeight.w500,
+                          ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    // Repo and PR number
+                    Text(
+                      '${widget.pr.repository.fullName} #${widget.pr.number}',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: AppTheme.textMuted,
+                            fontSize: 11,
+                          ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(width: 12),
+
+              // Merge status badge - fixed width
+              SizedBox(
+                width: 70,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: _getMergeStateColor().withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(4),
+                    border: Border.all(
+                      color: _getMergeStateColor().withValues(alpha: 0.3),
+                    ),
+                  ),
+                  child: Text(
+                    _getMergeStateText(),
+                    style: TextStyle(
+                      color: _getMergeStateColor(),
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
+
+              const SizedBox(width: 12),
+
+              // Time ago - fixed width
+              SizedBox(
+                width: 75,
+                child: Text(
+                  timeago.format(widget.pr.createdAt),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppTheme.textMuted,
+                        fontSize: 11,
+                      ),
+                  textAlign: TextAlign.right,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
