@@ -112,12 +112,20 @@ class _PrListScreenState extends ConsumerState<PrListScreen>
             child: Row(
               children: [
                 // App icon
-                Icon(
-                  Icons.inbox_rounded,
-                  color: colorScheme.primary,
-                  size: 24,
+                Image.asset(
+                  'assets/icon/icon.png',
+                  width: 28,
+                  height: 28,
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 8),
+                Text(
+                  'GitDesk',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: theme.textTheme.bodyLarge?.color,
+                  ),
+                ),
+                const SizedBox(width: 16),
 
                 // Tabs
                 Container(
