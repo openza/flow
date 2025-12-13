@@ -25,5 +25,4 @@ target_link_libraries(${BINARY_NAME} PRIVATE PkgConfig::GTK)
 
 target_include_directories(${BINARY_NAME} PRIVATE "${CMAKE_SOURCE_DIR}")
 
-# Copy the app icon to the build bundle
-install(FILES "resources/app_icon.png" DESTINATION "${CMAKE_INSTALL_PREFIX}/data" COMPONENT Runtime)
+# Note: App icon is included via assets/icon/ in pubspec.yaml
