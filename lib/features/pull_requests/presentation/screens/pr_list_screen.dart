@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/services/local_storage_service.dart';
 import '../../../../core/theme/theme_provider.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../domain/models/pull_request.dart';
@@ -48,6 +49,10 @@ class _PrListScreenState extends ConsumerState<PrListScreen>
 
   Future<void> _refresh() async {
     setState(() => _isRefreshing = true);
+
+    // Clear cache to ensure fresh data with correct sorting
+    final localStorage = ref.read(localStorageServiceProvider);
+    await localStorage.clearCache();
 
     // Refresh main lists first
     await Future.wait([

@@ -109,6 +109,8 @@ class PrRepository {
               state
               mergedAt
               updatedAt
+              baseRefName
+              headRefName
               author {
                 login
                 avatarUrl
@@ -208,6 +210,8 @@ class PrRepository {
               state
               mergedAt
               createdAt
+              baseRefName
+              headRefName
               repository {
                 name
                 owner {
@@ -279,6 +283,8 @@ class PrRepository {
               createdAt
               updatedAt
               isDraft
+              baseRefName
+              headRefName
               author {
                 login
                 avatarUrl
@@ -362,6 +368,8 @@ class PrRepository {
       createdAt: DateTime.parse(node['createdAt'] as String),
       updatedAt: DateTime.parse(node['updatedAt'] as String),
       draft: node['isDraft'] as bool,
+      baseRefName: node['baseRefName'] as String? ?? '',
+      headRefName: node['headRefName'] as String? ?? '',
       author: UserModel(
         id: 0,
         login: author['login'] as String,
@@ -432,6 +440,8 @@ class PrRepository {
       reviewedAt: reviewedAt,
       reviewState: reviewState,
       mergeState: mergeState,
+      baseRefName: node['baseRefName'] as String? ?? '',
+      headRefName: node['headRefName'] as String? ?? '',
       author: UserModel(
         id: 0,
         login: author['login'] as String,
@@ -467,6 +477,8 @@ class PrRepository {
       htmlUrl: node['url'] as String,
       createdAt: DateTime.parse(node['createdAt'] as String),
       mergeState: mergeState,
+      baseRefName: node['baseRefName'] as String? ?? '',
+      headRefName: node['headRefName'] as String? ?? '',
       repository: RepositoryModel(
         fullName: '${repository['owner']['login']}/${repository['name']}',
         htmlUrl: repository['url'] as String,

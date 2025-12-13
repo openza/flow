@@ -46,7 +46,12 @@ class PrListNotifier extends AsyncNotifier<List<PullRequestModel>> {
       final result = await prRepo.searchPullRequests(query);
       _endCursor = result.endCursor;
       _hasNextPage = result.hasNextPage;
-      return result.items;
+      
+      // Sort by updatedAt descending (most recent first)
+      final sorted = List<PullRequestModel>.from(result.items)
+        ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+      
+      return sorted;
     } else {
       // ------------------------------------------------------------------
       // Default Mode (Review Requests)
@@ -63,7 +68,21 @@ class PrListNotifier extends AsyncNotifier<List<PullRequestModel>> {
           Future.microtask(() => _refreshNetworkSilent());
           
           _startAutoRefresh();
-          return cached.items;
+          
+          // Sort by updatedAt descending (most recent first)
+          final sorted = List<PullRequestModel>.from(cached.items)
+            ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+          
+          // Debug: Print cache load
+          print('=== LOADING FROM CACHE ===');
+          for (var i = 0; i < sorted.length && i < 3; i++) {
+            print('${i + 1}. ${sorted[i].title}');
+            print('   Updated: ${sorted[i].updatedAt}');
+            print('   Created: ${sorted[i].createdAt}');
+          }
+          print('==========================');
+          
+          return sorted;
         }
       } catch (e) {
         // Ignore cache errors
@@ -79,7 +98,20 @@ class PrListNotifier extends AsyncNotifier<List<PullRequestModel>> {
       // Start auto-refresh after initial load
       _startAutoRefresh();
 
-      return result.items;
+      // Sort by updatedAt descending (most recent first)
+      final sorted = List<PullRequestModel>.from(result.items)
+        ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+      
+      // Debug: Print first 3 PRs to verify sort order
+      print('=== PR Sort Order (Review Requests) ===');
+      for (var i = 0; i < sorted.length && i < 3; i++) {
+        print('${i + 1}. ${sorted[i].title}');
+        print('   Updated: ${sorted[i].updatedAt}');
+        print('   Created: ${sorted[i].createdAt}');
+      }
+      print('=======================================');
+      
+      return sorted;
     }
   }
 
@@ -129,7 +161,11 @@ class PrListNotifier extends AsyncNotifier<List<PullRequestModel>> {
       _endCursor = result.endCursor;
       _hasNextPage = result.hasNextPage;
       
-      state = AsyncValue.data([...currentItems, ...result.items]);
+      // Combine and sort all items
+      final allItems = <PullRequestModel>[...currentItems, ...result.items];
+      allItems.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+      
+      state = AsyncValue.data(allItems);
     } catch (e) {
       // Handle error
     }
@@ -148,21 +184,40 @@ class PrListNotifier extends AsyncNotifier<List<PullRequestModel>> {
       final result = await _fetchPullRequests();
       _endCursor = result.endCursor;
       _hasNextPage = result.hasNextPage;
-      state = AsyncValue.data(result.items);
+      
+      // Sort by updatedAt descending (most recent first)
+      final sorted = List<PullRequestModel>.from(result.items)
+        ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+      
+      state = AsyncValue.data(sorted);
     } catch (e) {
       // Silent fail
     }
   }
 
   Future<void> refresh() async {
+    print('=== REFRESH CALLED ===');
     state = const AsyncValue.loading();
     try {
       _endCursor = null;
       final result = await _fetchPullRequests();
       _endCursor = result.endCursor;
       _hasNextPage = result.hasNextPage;
-      state = AsyncValue.data(result.items);
+      
+      // Sort by updatedAt descending (most recent first)
+      final sorted = List<PullRequestModel>.from(result.items)
+        ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+      
+      print('=== REFRESH COMPLETED ===');
+      for (var i = 0; i < sorted.length && i < 3; i++) {
+        print('${i + 1}. ${sorted[i].title}');
+        print('   Updated: ${sorted[i].updatedAt}');
+      }
+      print('=========================');
+      
+      state = AsyncValue.data(sorted);
     } catch (e, st) {
+      print('=== REFRESH ERROR: $e ===');
       state = AsyncValue.error(e, st);
     }
   }
@@ -205,7 +260,12 @@ class CreatedPrListNotifier extends AsyncNotifier<List<PullRequestModel>> {
       if (cached.items.isNotEmpty) {
         Future.microtask(() => _refreshNetworkSilent());
         _startAutoRefresh();
-        return cached.items;
+        
+        // Sort by updatedAt descending (most recent first)
+        final sorted = List<PullRequestModel>.from(cached.items)
+          ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+        
+        return sorted;
       }
     } catch (e) {
       // ignore
@@ -216,7 +276,12 @@ class CreatedPrListNotifier extends AsyncNotifier<List<PullRequestModel>> {
     _hasNextPage = result.hasNextPage;
     
     _startAutoRefresh();
-    return result.items;
+    
+    // Sort by updatedAt descending (most recent first)
+    final sorted = List<PullRequestModel>.from(result.items)
+      ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+    
+    return sorted;
   }
 
   Future<void> loadMore() async {
@@ -228,7 +293,12 @@ class CreatedPrListNotifier extends AsyncNotifier<List<PullRequestModel>> {
       final result = await prRepo.getCreatedPrs(afterCursor: _endCursor);
       _endCursor = result.endCursor;
       _hasNextPage = result.hasNextPage;
-      state = AsyncValue.data([...currentItems, ...result.items]);
+      
+      // Combine and sort all items
+      final allItems = <PullRequestModel>[...currentItems, ...result.items];
+      allItems.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+      
+      state = AsyncValue.data(allItems);
     } catch (e) {
       // ignore
     }
@@ -248,7 +318,12 @@ class CreatedPrListNotifier extends AsyncNotifier<List<PullRequestModel>> {
       final result = await prRepo.getCreatedPrs(); // First page
       _endCursor = result.endCursor;
       _hasNextPage = result.hasNextPage;
-      state = AsyncValue.data(result.items);
+      
+      // Sort by updatedAt descending (most recent first)
+      final sorted = List<PullRequestModel>.from(result.items)
+        ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+      
+      state = AsyncValue.data(sorted);
     } catch (e) {
       // silent
     }
@@ -261,7 +336,12 @@ class CreatedPrListNotifier extends AsyncNotifier<List<PullRequestModel>> {
       final result = await prRepo.getCreatedPrs();
       _endCursor = result.endCursor;
       _hasNextPage = result.hasNextPage;
-      state = AsyncValue.data(result.items);
+      
+      // Sort by updatedAt descending (most recent first)
+      final sorted = List<PullRequestModel>.from(result.items)
+        ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+      
+      state = AsyncValue.data(sorted);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
     }
@@ -283,11 +363,16 @@ final reviewedPrListProvider =
 });
 
 class ReviewedPrListNotifier extends AsyncNotifier<List<ReviewedPullRequestModel>> {
+  Timer? _autoRefreshTimer;
   String? _endCursor;
   bool _hasNextPage = true;
 
   @override
   Future<List<ReviewedPullRequestModel>> build() async {
+    ref.onDispose(() {
+      _autoRefreshTimer?.cancel();
+    });
+
     final prRepo = ref.read(prRepositoryProvider);
     _endCursor = null;
     _hasNextPage = true;
@@ -296,6 +381,7 @@ class ReviewedPrListNotifier extends AsyncNotifier<List<ReviewedPullRequestModel
       final cached = await prRepo.getCachedReviewedPrs();
       if (cached.items.isNotEmpty) {
         Future.microtask(() => _refreshNetworkSilent());
+        _startAutoRefresh();
         return cached.items;
       }
     } catch (e) {
@@ -305,6 +391,7 @@ class ReviewedPrListNotifier extends AsyncNotifier<List<ReviewedPullRequestModel
     final result = await prRepo.getReviewedPrs();
     _endCursor = result.endCursor;
     _hasNextPage = result.hasNextPage;
+    _startAutoRefresh();
     return result.items;
   }
   
@@ -321,6 +408,14 @@ class ReviewedPrListNotifier extends AsyncNotifier<List<ReviewedPullRequestModel
     } catch (e) {
       // ignore
     }
+  }
+
+  void _startAutoRefresh() {
+    _autoRefreshTimer?.cancel();
+    _autoRefreshTimer = Timer.periodic(
+      const Duration(minutes: 5),
+      (_) => _refreshNetworkSilent(),
+    );
   }
 
   Future<void> _refreshNetworkSilent() async {
@@ -358,19 +453,28 @@ final recentlyCreatedPrListProvider =
 });
 
 class RecentlyCreatedPrListNotifier extends AsyncNotifier<List<CreatedPullRequestModel>> {
+  Timer? _autoRefreshTimer;
+
   @override
   Future<List<CreatedPullRequestModel>> build() async {
+    ref.onDispose(() {
+      _autoRefreshTimer?.cancel();
+    });
+
     final prRepo = ref.read(prRepositoryProvider);
     try {
       final cached = await prRepo.getCachedRecentlyCreatedPrs();
       if (cached.isNotEmpty) {
         _refreshNetworkSilent();
+        _startAutoRefresh();
         return cached;
       }
     } catch (e) {
       // ignore
     }
-    return await _fetchRecentlyCreatedPrs();
+    final result = await _fetchRecentlyCreatedPrs();
+    _startAutoRefresh();
+    return result;
   }
 
   Future<List<CreatedPullRequestModel>> _fetchRecentlyCreatedPrs() async {
@@ -378,6 +482,14 @@ class RecentlyCreatedPrListNotifier extends AsyncNotifier<List<CreatedPullReques
     return await prRepo.getRecentlyCreatedPrs();
   }
   
+  void _startAutoRefresh() {
+    _autoRefreshTimer?.cancel();
+    _autoRefreshTimer = Timer.periodic(
+      const Duration(minutes: 5),
+      (_) => _refreshNetworkSilent(),
+    );
+  }
+
   Future<void> _refreshNetworkSilent() async {
      try {
        final prs = await _fetchRecentlyCreatedPrs();

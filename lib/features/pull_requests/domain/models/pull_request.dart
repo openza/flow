@@ -13,6 +13,8 @@ class PullRequestModel {
   final UserModel author;
   final RepositoryModel repository;
   final List<LabelModel> labels;
+  final String baseRefName;
+  final String headRefName;
 
   PullRequestModel({
     required this.id,
@@ -27,6 +29,8 @@ class PullRequestModel {
     required this.author,
     required this.repository,
     required this.labels,
+    required this.baseRefName,
+    required this.headRefName,
   });
 
   factory PullRequestModel.fromGitHubIssue(Map<String, dynamic> json) {
@@ -54,6 +58,8 @@ class PullRequestModel {
       labels: (json['labels'] as List<dynamic>? ?? [])
           .map((l) => LabelModel.fromJson(l as Map<String, dynamic>))
           .toList(),
+      baseRefName: '',
+      headRefName: '',
     );
   }
 
@@ -71,6 +77,8 @@ class PullRequestModel {
       'author': author.toJson(),
       'repository': repository.toJson(),
       'labels': labels.map((l) => l.toJson()).toList(),
+      'base_ref_name': baseRefName,
+      'head_ref_name': headRefName,
     };
   }
 
@@ -91,6 +99,8 @@ class PullRequestModel {
       labels: (json['labels'] as List<dynamic>)
           .map((l) => LabelModel.fromJson(l as Map<String, dynamic>))
           .toList(),
+      baseRefName: json['base_ref_name'] as String? ?? '',
+      headRefName: json['head_ref_name'] as String? ?? '',
     );
   }
 }
@@ -177,6 +187,8 @@ class ReviewedPullRequestModel {
   final MergeState mergeState;
   final UserModel author;
   final RepositoryModel repository;
+  final String baseRefName;
+  final String headRefName;
 
   ReviewedPullRequestModel({
     required this.id,
@@ -188,6 +200,8 @@ class ReviewedPullRequestModel {
     required this.mergeState,
     required this.author,
     required this.repository,
+    required this.baseRefName,
+    required this.headRefName,
   });
 
   factory ReviewedPullRequestModel.fromGitHubIssue(
@@ -230,6 +244,8 @@ class ReviewedPullRequestModel {
         fullName: repoName,
         htmlUrl: repositoryUrl,
       ),
+      baseRefName: '',
+      headRefName: '',
     );
   }
 
@@ -244,6 +260,8 @@ class ReviewedPullRequestModel {
       'merge_state': mergeState.index,
       'author': author.toJson(),
       'repository': repository.toJson(),
+      'base_ref_name': baseRefName,
+      'head_ref_name': headRefName,
     };
   }
 
@@ -259,6 +277,8 @@ class ReviewedPullRequestModel {
       author: UserModel.fromJson(json['author'] as Map<String, dynamic>),
       repository:
           RepositoryModel.fromJson(json['repository'] as Map<String, dynamic>),
+      baseRefName: json['base_ref_name'] as String? ?? '',
+      headRefName: json['head_ref_name'] as String? ?? '',
     );
   }
 }
@@ -271,6 +291,8 @@ class CreatedPullRequestModel {
   final DateTime createdAt;
   final MergeState mergeState;
   final RepositoryModel repository;
+  final String baseRefName;
+  final String headRefName;
 
   CreatedPullRequestModel({
     required this.id,
@@ -280,6 +302,8 @@ class CreatedPullRequestModel {
     required this.createdAt,
     required this.mergeState,
     required this.repository,
+    required this.baseRefName,
+    required this.headRefName,
   });
 
   factory CreatedPullRequestModel.fromGitHubIssue(Map<String, dynamic> json) {
@@ -313,6 +337,8 @@ class CreatedPullRequestModel {
         fullName: repoName,
         htmlUrl: repositoryUrl,
       ),
+      baseRefName: '',
+      headRefName: '',
     );
   }
 
@@ -325,6 +351,8 @@ class CreatedPullRequestModel {
       'created_at': createdAt.toIso8601String(),
       'merge_state': mergeState.index,
       'repository': repository.toJson(),
+      'base_ref_name': baseRefName,
+      'head_ref_name': headRefName,
     };
   }
 
@@ -338,6 +366,8 @@ class CreatedPullRequestModel {
       mergeState: MergeState.values[json['merge_state'] as int],
       repository:
           RepositoryModel.fromJson(json['repository'] as Map<String, dynamic>),
+      baseRefName: json['base_ref_name'] as String? ?? '',
+      headRefName: json['head_ref_name'] as String? ?? '',
     );
   }
 }

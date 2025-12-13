@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:timeago/timeago.dart' as timeago;
 import 'package:url_launcher/url_launcher.dart';
 
@@ -116,6 +117,10 @@ class _PrCardState extends State<PrCard> with SingleTickerProviderStateMixin {
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
+                        const SizedBox(width: 8),
+                        // PR Number badge with copy button
+                        _PrNumberBadge(prNumber: widget.pr.number),
+                        const SizedBox(width: 8),
                         // Time ago
                         Text(
                           timeago.format(widget.pr.updatedAt),
@@ -160,17 +165,34 @@ class _PrCardState extends State<PrCard> with SingleTickerProviderStateMixin {
                                                 : textTheme.bodyLarge?.color,
                                           ),
                                     ),
-                                    TextSpan(
-                                      text: ' #${widget.pr.number}',
-                                      style: textTheme.bodyMedium?.copyWith(
-                                            color: textTheme.bodySmall?.color,
-                                          ),
-                                    ),
                                   ],
                                 ),
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
                               ),
+                              if (widget.pr.baseRefName.isNotEmpty) ...[
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.call_split_rounded,
+                                      size: 12,
+                                      color: textTheme.bodySmall?.color,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Flexible(
+                                      child: Text(
+                                        '${widget.pr.headRefName} → ${widget.pr.baseRefName}',
+                                        style: textTheme.bodySmall?.copyWith(
+                                              fontSize: 11,
+                                            ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ],
                           ),
                         ),
@@ -282,6 +304,96 @@ class _LabelChip extends StatelessWidget {
         ),
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
+      ),
+    );
+  }
+}
+
+/// Reusable PR number badge with copy-to-clipboard functionality
+class _PrNumberBadge extends StatefulWidget {
+  final int prNumber;
+  final bool compact;
+
+  const _PrNumberBadge({
+    required this.prNumber,
+    this.compact = false,
+  });
+
+  @override
+  State<_PrNumberBadge> createState() => _PrNumberBadgeState();
+}
+
+class _PrNumberBadgeState extends State<_PrNumberBadge> {
+  bool _copied = false;
+
+  Future<void> _copyToClipboard() async {
+    await Clipboard.setData(ClipboardData(text: widget.prNumber.toString()));
+    setState(() => _copied = true);
+    
+    // Reset after 2 seconds
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) {
+        setState(() => _copied = false);
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    
+    return Tooltip(
+      message: _copied ? 'Copied!' : 'Copy PR #${widget.prNumber}',
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: _copyToClipboard,
+          borderRadius: BorderRadius.circular(6),
+          child: Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: widget.compact ? 6 : 8,
+              vertical: widget.compact ? 3 : 4,
+            ),
+            decoration: BoxDecoration(
+              color: _copied
+                  ? colorScheme.secondary.withValues(alpha: 0.2)
+                  : colorScheme.primary.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(
+                color: _copied
+                    ? colorScheme.secondary.withValues(alpha: 0.5)
+                    : colorScheme.primary.withValues(alpha: 0.4),
+                width: 1,
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  _copied ? Icons.check_rounded : Icons.tag_rounded,
+                  size: widget.compact ? 12 : 14,
+                  color: _copied ? colorScheme.secondary : colorScheme.primary,
+                ),
+                SizedBox(width: widget.compact ? 4 : 5),
+                Text(
+                  '${widget.prNumber}',
+                  style: TextStyle(
+                    color: _copied ? colorScheme.secondary : colorScheme.primary,
+                    fontSize: widget.compact ? 11 : 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                SizedBox(width: widget.compact ? 3 : 4),
+                Icon(
+                  _copied ? Icons.check_circle_rounded : Icons.copy_rounded,
+                  size: widget.compact ? 11 : 12,
+                  color: _copied ? colorScheme.secondary : colorScheme.primary,
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -430,15 +542,42 @@ class _ReviewedPrCardState extends State<ReviewedPrCard> {
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 2),
-                    // Repo and PR number
-                    Text(
-                      '${widget.pr.repository.fullName} #${widget.pr.number}',
-                      style: textTheme.bodySmall?.copyWith(
-                            color: textTheme.bodySmall?.color,
-                            fontSize: 11,
+                    // Repo and PR number with badge
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            widget.pr.repository.fullName,
+                            style: textTheme.bodySmall?.copyWith(
+                                  color: textTheme.bodySmall?.color,
+                                  fontSize: 11,
+                                ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(width: 6),
+                        _PrNumberBadge(
+                          prNumber: widget.pr.number,
+                          compact: true,
+                        ),
+                        if (widget.pr.baseRefName.isNotEmpty) ...[
+                          const SizedBox(width: 6),
+                          Icon(
+                            Icons.arrow_forward,
+                            size: 10,
+                            color: textTheme.bodySmall?.color,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            widget.pr.baseRefName,
+                            style: textTheme.bodySmall?.copyWith(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                          ),
+                        ],
+                      ],
                     ),
                   ],
                 ),
@@ -675,15 +814,42 @@ class _CreatedPrCardState extends State<CreatedPrCard> {
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 2),
-                    // Repo and PR number
-                    Text(
-                      '${widget.pr.repository.fullName} #${widget.pr.number}',
-                      style: textTheme.bodySmall?.copyWith(
-                            color: textTheme.bodySmall?.color,
-                            fontSize: 11,
+                    // Repo and PR number with badge
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            widget.pr.repository.fullName,
+                            style: textTheme.bodySmall?.copyWith(
+                                  color: textTheme.bodySmall?.color,
+                                  fontSize: 11,
+                                ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(width: 6),
+                        _PrNumberBadge(
+                          prNumber: widget.pr.number,
+                          compact: true,
+                        ),
+                        if (widget.pr.baseRefName.isNotEmpty) ...[
+                          const SizedBox(width: 6),
+                          Icon(
+                            Icons.arrow_forward,
+                            size: 10,
+                            color: textTheme.bodySmall?.color,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            widget.pr.baseRefName,
+                            style: textTheme.bodySmall?.copyWith(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                          ),
+                        ],
+                      ],
                     ),
                   ],
                 ),

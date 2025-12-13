@@ -47,6 +47,6 @@ class LocalStorageService {
   Future<void> clearCache() async {
     if (!_initialized) await initialize();
     await _box.deleteFromDisk();
-    await Hive.openBox(_boxName); // Re-open fresh
+    _box = await Hive.openBox(_boxName); // Re-open and reassign reference
   }
 }
