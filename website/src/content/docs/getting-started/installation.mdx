@@ -1,0 +1,65 @@
+---
+title: Installation
+description: How to install Openza GitDesk on your Linux system
+---
+
+import { Tabs, TabItem, Steps } from '@astrojs/starlight/components';
+
+# Installation
+
+Openza GitDesk is available as an AppImage and Flatpak for Linux systems.
+
+## Download
+
+<Tabs>
+  <TabItem label="AppImage">
+    Download the latest AppImage from the [GitHub Releases](https://github.com/openza/gitdesk/releases/latest) page.
+
+    <Steps>
+    1. Download the `.AppImage` file
+    2. Make it executable:
+       ```bash
+       chmod +x GitDesk-*.AppImage
+       ```
+    3. Run the application:
+       ```bash
+       ./GitDesk-*.AppImage
+       ```
+    </Steps>
+
+    **System Requirements:**
+    - Ubuntu 22.04+, Fedora 35+, or Debian 12+
+    - GLIBC 2.34 or newer
+  </TabItem>
+
+  <TabItem label="Flatpak">
+    Download the Flatpak bundle from [GitHub Releases](https://github.com/openza/gitdesk/releases/latest).
+
+    <Steps>
+    1. Install Flatpak if not already installed:
+       ```bash
+       # Ubuntu/Debian
+       sudo apt install flatpak
+
+       # Fedora
+       sudo dnf install flatpak
+       ```
+    2. Install GitDesk:
+       ```bash
+       flatpak install GitDesk-*.flatpak
+       ```
+    3. Run the application:
+       ```bash
+       flatpak run com.openza.gitdesk
+       ```
+    </Steps>
+  </TabItem>
+</Tabs>
+
+## Build from Source
+
+If you prefer to build from source, see the [Building from Source](/gitdesk/development/building) guide.
+
+## Next Steps
+
+After installation, proceed to [GitHub Token Setup](/gitdesk/getting-started/github-token) to connect your GitHub account.

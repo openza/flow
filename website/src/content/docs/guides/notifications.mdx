@@ -1,0 +1,56 @@
+---
+title: Notifications
+description: Configure desktop notifications for GitDesk
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+# Desktop Notifications
+
+GitDesk can send desktop notifications to keep you updated on PR activity.
+
+## Notification Types
+
+| Event | Description |
+|-------|-------------|
+| **Review Requested** | You've been added as a reviewer |
+| **PR Updated** | A PR you're reviewing has new commits |
+| **Review Received** | Your PR received a review |
+| **PR Merged** | A PR you're involved with was merged |
+
+## Enabling Notifications
+
+1. Open **Settings** (gear icon)
+2. Navigate to **Notifications**
+3. Toggle on the notification types you want
+
+<Aside type="note">
+  GitDesk uses your system's native notification system (libnotify on Linux).
+</Aside>
+
+## Notification Settings
+
+| Setting | Description |
+|---------|-------------|
+| **Enable Notifications** | Master toggle for all notifications |
+| **Sound** | Play a sound with notifications |
+| **Review Requests** | Notify when added as reviewer |
+| **PR Updates** | Notify on PR activity |
+
+## Troubleshooting
+
+### Notifications Not Showing
+
+1. Check that system notifications are enabled
+2. Verify GitDesk has notification permissions
+3. Check "Do Not Disturb" mode is off
+
+### On Flatpak
+
+Flatpak apps need notification portal access:
+
+```bash
+flatpak permission-show com.openza.gitdesk
+```
+
+Ensure `notifications` is listed as `yes`.

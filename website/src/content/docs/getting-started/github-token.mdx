@@ -1,0 +1,71 @@
+---
+title: GitHub Token Setup
+description: How to set up your GitHub Personal Access Token for GitDesk
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+# GitHub Token Setup
+
+GitDesk uses a GitHub Personal Access Token (PAT) to access your pull request data.
+
+<Aside type="caution">
+  Keep your token secure! Never share it or commit it to version control.
+</Aside>
+
+## Creating a Personal Access Token
+
+<Steps>
+1. Go to [GitHub Settings > Developer settings > Personal access tokens](https://github.com/settings/tokens)
+
+2. Click **"Generate new token (classic)"**
+
+3. Give your token a descriptive name (e.g., "GitDesk Desktop")
+
+4. Select the required scopes:
+   - `repo` - Full control of private repositories (required for PR access)
+   - `read:user` - Read your profile information
+   - `notifications` - Access notifications (optional, for notification features)
+
+5. Click **"Generate token"**
+
+6. **Copy the token immediately** - you won't be able to see it again!
+</Steps>
+
+## Adding the Token to GitDesk
+
+<Steps>
+1. Launch GitDesk
+
+2. Paste your token in the authentication screen
+
+3. Click **"Connect"**
+
+4. Your PRs will start loading
+</Steps>
+
+<Aside type="tip">
+  Your token is stored securely using your system's secret storage (GNOME Keyring, KWallet, etc.).
+</Aside>
+
+## Token Permissions Explained
+
+| Scope | Why It's Needed |
+|-------|----------------|
+| `repo` | Access to view PRs in private repositories |
+| `read:user` | Display your username and avatar |
+| `notifications` | Show GitHub notifications (optional) |
+
+## Troubleshooting
+
+### "Bad Credentials" Error
+
+- Ensure you copied the entire token
+- Check that the token hasn't expired
+- Verify the token has the required scopes
+
+### Token Not Saving
+
+- Ensure your system's secret storage service is running
+- On GNOME, check that `gnome-keyring` is installed
+- On KDE, check that `kwallet` is running
