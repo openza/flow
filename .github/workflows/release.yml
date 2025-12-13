@@ -47,6 +47,17 @@ jobs:
           chmod +x scripts/build-appimage.sh
           ./scripts/build-appimage.sh
 
+      - name: Install Flatpak dependencies
+        run: |
+          sudo apt-get install -y flatpak flatpak-builder
+          sudo flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+          sudo flatpak install -y flathub org.gnome.Platform//46 org.gnome.Sdk//46
+
+      - name: Build Flatpak
+        run: |
+          chmod +x scripts/build-flatpak.sh
+          ./scripts/build-flatpak.sh
+
       - name: Get version from tag
         id: get_version
         run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
@@ -59,11 +70,17 @@ jobs:
           prerelease: false
           files: |
             GitDesk-*.AppImage
+            GitDesk-*.flatpak
           body: |
             ## GitDesk v${{ steps.get_version.outputs.VERSION }}
 
             ### Download
-            - **Linux**: Download the `.AppImage` file, make it executable (`chmod +x`), and run it.
+            - **AppImage**: Download `.AppImage`, make executable (`chmod +x`), and run
+            - **Flatpak**: Download `.flatpak` and install with `flatpak install GitDesk-*.flatpak`
+
+            ### System Requirements
+            - **AppImage**: Ubuntu 22.04+, Fedora 35+, Debian 12+ (GLIBC 2.34+)
+            - **Flatpak**: Any Linux with Flatpak installed
 
             ### What's New
             See [CHANGELOG](https://github.com/openza/gitdesk/blob/main/CHANGELOG.md) for details.

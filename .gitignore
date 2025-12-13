@@ -48,3 +48,14 @@ app.*.map.json
 .metadata
 .env
 .claude/
+
+# Build artifacts
+*.AppImage
+*.flatpak
+*.AppDir/
+appimagetool-*
+squashfs-root/
+flatpak/.flatpak-builder/
+flatpak/build-dir/
+flatpak/repo/
+flatpak/build/

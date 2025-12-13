@@ -1,0 +1,40 @@
+app-id: com.openza.gitdesk
+runtime: org.gnome.Platform
+runtime-version: '46'
+sdk: org.gnome.Sdk
+command: gitdesk
+finish-args:
+  # Display
+  - --share=ipc
+  - --socket=fallback-x11
+  - --socket=wayland
+  # Network access (GitHub API)
+  - --share=network
+  # Notifications
+  - --talk-name=org.freedesktop.Notifications
+  # Open URLs in browser
+  - --talk-name=org.freedesktop.portal.OpenURI
+  # Secret storage (for GitHub token)
+  - --talk-name=org.freedesktop.secrets
+  # GPU acceleration
+  - --device=dri
+
+modules:
+  - name: gitdesk
+    buildsystem: simple
+    build-commands:
+      - cp -r bundle /app/gitdesk
+      - chmod +x /app/gitdesk/gitdesk
+      - mkdir -p /app/bin
+      - ln -s /app/gitdesk/gitdesk /app/bin/gitdesk
+      - install -Dm644 gitdesk.desktop /app/share/applications/com.openza.gitdesk.desktop
+      - install -Dm644 icon.png /app/share/icons/hicolor/256x256/apps/com.openza.gitdesk.png
+    sources:
+      - type: dir
+        path: ../build/linux/x64/release/bundle
+        dest: bundle
+      - type: file
+        path: build/com.openza.gitdesk.desktop
+        dest-filename: gitdesk.desktop
+      - type: file
+        path: ../assets/icon/icon.png
