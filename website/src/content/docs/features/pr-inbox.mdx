@@ -7,27 +7,36 @@ description: Understanding the GitDesk PR inbox interface
 
 The PR Inbox is the main interface of GitDesk, showing all your pull request activity in one place.
 
-## Inbox Sections
+## Inbox Tabs
 
-### Awaiting Your Review
+GitDesk organizes your PRs into two main tabs:
 
-PRs where you've been requested as a reviewer:
+### Review Requests Tab
+
+This tab shows PRs that need your attention:
+
+**Pending Reviews**
+- PRs where you've been requested as a reviewer
 - Shows PR title, repository, and author
-- Displays time since review was requested
-- Indicates CI/CD status
+- Displays time since last update
 
-### Your Pull Requests
+**Recently Reviewed**
+- PRs you've recently reviewed
+- Shows your review status (Approved, Changes Requested, Commented, Pending)
+- Helps you track PRs you're involved with
 
-PRs you've created:
+### Created Tab
+
+This tab shows PRs you've authored:
+
+**Open Pull Requests**
+- Your currently open PRs
 - Track review status from your team
 - See merge readiness at a glance
-- Monitor CI/CD results
 
-### Assigned PRs
-
-PRs assigned to you:
-- View your assignments across repositories
-- Track progress on assigned work
+**Recently Created**
+- Your most recently created PRs
+- Quick access to PRs you've authored
 
 ## PR Card Information
 
@@ -38,19 +47,17 @@ Each PR card displays:
 | **Title** | The PR title |
 | **Repository** | Owner/repo format |
 | **Author** | PR author with avatar |
-| **Status** | Open, merged, or closed |
-| **Reviews** | Approval status |
-| **CI Status** | Build/test results |
+| **Labels** | PR labels with colors |
+| **Base/Head** | Branch information |
 | **Updated** | Time since last update |
 
 ## Actions
 
-- **Click** - Expand PR details
-- **Double-click** - Open in browser
-- **Right-click** - Context menu options
+- **Click** - Open the PR in your browser on GitHub
+- **Search** - Use the search bar to filter PRs by text
 
 ## Refresh Behavior
 
-- Auto-refresh every 5 minutes
-- Manual refresh with the refresh button
-- Pull-to-refresh on touch devices
+- Auto-refresh every 5 minutes in the background
+- Manual refresh with the refresh button in the header
+- Theme toggle (dark/light mode) available in the header
