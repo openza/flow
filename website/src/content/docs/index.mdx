@@ -1,0 +1,36 @@
+---
+title: Openza GitDesk Documentation
+description: Documentation for Openza GitDesk - GitHub PR Review Inbox for Linux
+template: splash
+hero:
+  tagline: GitHub PR Review Inbox for your Linux desktop
+  image:
+    file: ../../assets/logo.svg
+  actions:
+    - text: Get Started
+      link: /gitdesk/getting-started/introduction
+      icon: right-arrow
+      variant: primary
+    - text: View on GitHub
+      link: https://github.com/openza/gitdesk
+      icon: external
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+## Features
+
+<CardGrid stagger>
+  <Card title="PR Review Inbox" icon="approve-check-circle">
+    Track all pull requests waiting for your review in one unified view.
+  </Card>
+  <Card title="Desktop Notifications" icon="bell">
+    Get notified when you're requested to review a PR or when your PRs are updated.
+  </Card>
+  <Card title="Fast & Native" icon="rocket">
+    Built with Flutter for smooth performance on your Linux desktop.
+  </Card>
+  <Card title="Open Source" icon="github">
+    MIT licensed, transparent development. Fork it, improve it, share it.
+  </Card>
+</CardGrid>

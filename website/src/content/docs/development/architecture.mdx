@@ -1,0 +1,80 @@
+---
+title: Architecture
+description: Understanding the Openza GitDesk codebase architecture
+---
+
+# Architecture
+
+Openza GitDesk follows Clean Architecture principles with feature-based organization.
+
+## Project Structure
+
+```
+lib/
+├── main.dart                 # Entry point
+├── app.dart                  # Root widget
+│
+├── core/                     # Shared utilities
+│   ├── constants/           # App-wide constants
+│   ├── models/              # Shared models
+│   ├── services/            # Core services
+│   │   ├── graphql_service.dart
+│   │   ├── notification_service.dart
+│   │   └── storage_service.dart
+│   └── theme/               # App theming
+│
+└── features/                 # Feature modules
+    ├── auth/                # Authentication
+    │   ├── data/           # Token repository
+    │   └── presentation/   # Login UI
+    │
+    └── pull_requests/       # PR display
+        ├── data/           # PR repository
+        ├── domain/         # PR models
+        └── presentation/   # PR list UI
+```
+
+## Key Technologies
+
+| Layer | Technology |
+|-------|------------|
+| State Management | Riverpod |
+| GitHub API | GraphQL |
+| HTTP Client | http package |
+| Caching | Hive |
+| Secure Storage | flutter_secure_storage |
+| Notifications | local_notifier |
+| Image Caching | cached_network_image |
+
+## GitHub API
+
+GitDesk uses GitHub's GraphQL API (v4) for efficient data fetching:
+
+```graphql
+query GetPullRequests {
+  viewer {
+    pullRequests(first: 50, states: OPEN) {
+      nodes {
+        title
+        repository { nameWithOwner }
+        reviewDecision
+        ...
+      }
+    }
+  }
+}
+```
+
+This allows fetching all required data in a single request.
+
+## Data Flow
+
+```
+UI → Providers → Repository → GraphQL Service → GitHub API
+```
+
+1. **UI** triggers data requests through Riverpod providers
+2. **Providers** call repository methods
+3. **Repository** makes GraphQL queries
+4. **GraphQL Service** handles API communication
+5. Results flow back through the same chain
