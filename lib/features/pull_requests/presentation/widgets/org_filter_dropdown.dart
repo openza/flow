@@ -13,7 +13,8 @@ class OrgFilterDropdown extends ConsumerWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final orgsAsync = ref.watch(userOrganizationsProvider);
-    final selectedOrg = ref.watch(selectedOrgProvider);
+    // selectedOrgProvider is now async - get the value or null while loading
+    final selectedOrg = ref.watch(selectedOrgProvider).valueOrNull;
 
     return orgsAsync.when(
       data: (orgs) {

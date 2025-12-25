@@ -55,7 +55,9 @@ enum DeviceFlowStatus {
 }
 
 class OAuthService {
-  bool _cancelled = false;
+  /// Current flow ID - each new flow gets a unique ID.
+  /// Cancellation checks this ID to ensure only the current flow is affected.
+  int _currentFlowId = 0;
 
   /// Starts the GitHub Device Flow for authentication.
   ///
@@ -64,7 +66,8 @@ class OAuthService {
   Future<OAuthResult> startDeviceFlow({
     required DeviceFlowCallback onStatusChange,
   }) async {
-    _cancelled = false;
+    // Increment flow ID to invalidate any previous flows
+    final flowId = ++_currentFlowId;
 
     try {
       // Step 1: Request device code
@@ -84,12 +87,14 @@ class OAuthService {
       final result = await _pollForToken(
         deviceCodeInfo: deviceCodeInfo,
         onStatusChange: onStatusChange,
+        flowId: flowId,
       );
 
       onStatusChange(DeviceFlowStatus.success, null);
       return result;
     } catch (e) {
-      if (_cancelled) {
+      // Check if this flow was cancelled (flowId no longer matches current)
+      if (flowId != _currentFlowId) {
         onStatusChange(DeviceFlowStatus.cancelled, null);
       } else {
         onStatusChange(DeviceFlowStatus.error, e.toString());
@@ -98,9 +103,9 @@ class OAuthService {
     }
   }
 
-  /// Cancels an ongoing device flow.
+  /// Cancels any ongoing device flow by incrementing the flow ID.
   void cancelDeviceFlow() {
-    _cancelled = true;
+    _currentFlowId++;
   }
 
   /// Request a device code from GitHub.
@@ -145,15 +150,20 @@ class OAuthService {
   Future<OAuthResult> _pollForToken({
     required DeviceCodeInfo deviceCodeInfo,
     required DeviceFlowCallback onStatusChange,
+    required int flowId,
   }) async {
     final expiresAt = DateTime.now().add(Duration(seconds: deviceCodeInfo.expiresIn));
     var interval = deviceCodeInfo.interval;
 
-    while (!_cancelled && DateTime.now().isBefore(expiresAt)) {
+    // Check if this flow is still current (not cancelled or replaced by new flow)
+    bool isCurrentFlow() => flowId == _currentFlowId;
+
+    while (isCurrentFlow() && DateTime.now().isBefore(expiresAt)) {
       // Wait for the interval before polling
       await Future.delayed(Duration(seconds: interval));
 
-      if (_cancelled) {
+      // Check again after delay - flow may have been cancelled during wait
+      if (!isCurrentFlow()) {
         throw Exception('Device flow cancelled');
       }
 
@@ -213,7 +223,8 @@ class OAuthService {
       }
     }
 
-    if (_cancelled) {
+    // Flow exited while loop - check if cancelled or expired
+    if (!isCurrentFlow()) {
       throw Exception('Device flow cancelled');
     }
 

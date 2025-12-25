@@ -32,7 +32,8 @@ class PrListNotifier extends AsyncNotifier<List<PullRequestModel>> {
     });
 
     final query = ref.watch(prSearchQueryProvider);
-    final orgFilter = ref.watch(selectedOrgProvider);
+    // Wait for saved org filter to load before making API calls
+    final orgFilter = ref.watch(selectedOrgProvider).valueOrNull;
     final prRepo = ref.read(prRepositoryProvider);
     
     // Reset pagination
@@ -129,7 +130,7 @@ class PrListNotifier extends AsyncNotifier<List<PullRequestModel>> {
   Future<dynamic> _fetchPullRequests({String? cursor}) async {
     final prRepo = ref.read(prRepositoryProvider);
     final query = ref.read(prSearchQueryProvider);
-    final orgFilter = ref.read(selectedOrgProvider);
+    final orgFilter = ref.read(selectedOrgProvider).valueOrNull;
 
     if (query.isNotEmpty) {
       return await prRepo.searchPullRequests(query, afterCursor: cursor);
@@ -264,7 +265,8 @@ class CreatedPrListNotifier extends AsyncNotifier<List<PullRequestModel>> {
     });
 
     final prRepo = ref.read(prRepositoryProvider);
-    final orgFilter = ref.watch(selectedOrgProvider);
+    // Wait for saved org filter to load before making API calls
+    final orgFilter = ref.watch(selectedOrgProvider).valueOrNull;
 
     _endCursor = null;
     _hasNextPage = true;
@@ -305,7 +307,7 @@ class CreatedPrListNotifier extends AsyncNotifier<List<PullRequestModel>> {
     if (!_hasNextPage) return;
     final currentItems = state.value ?? [];
     final prRepo = ref.read(prRepositoryProvider);
-    final orgFilter = ref.read(selectedOrgProvider);
+    final orgFilter = ref.read(selectedOrgProvider).valueOrNull;
 
     try {
       final result = await prRepo.getCreatedPrs(
@@ -336,7 +338,7 @@ class CreatedPrListNotifier extends AsyncNotifier<List<PullRequestModel>> {
   Future<void> _refreshNetworkSilent() async {
     try {
       final prRepo = ref.read(prRepositoryProvider);
-      final orgFilter = ref.read(selectedOrgProvider);
+      final orgFilter = ref.read(selectedOrgProvider).valueOrNull;
       final result = await prRepo.getCreatedPrs(orgFilter: orgFilter);
       _endCursor = result.endCursor;
       _hasNextPage = result.hasNextPage;
@@ -355,7 +357,7 @@ class CreatedPrListNotifier extends AsyncNotifier<List<PullRequestModel>> {
     state = const AsyncValue.loading();
     try {
       final prRepo = ref.read(prRepositoryProvider);
-      final orgFilter = ref.read(selectedOrgProvider);
+      final orgFilter = ref.read(selectedOrgProvider).valueOrNull;
       final result = await prRepo.getCreatedPrs(orgFilter: orgFilter);
       _endCursor = result.endCursor;
       _hasNextPage = result.hasNextPage;
@@ -397,7 +399,8 @@ class ReviewedPrListNotifier extends AsyncNotifier<List<ReviewedPullRequestModel
     });
 
     final prRepo = ref.read(prRepositoryProvider);
-    final orgFilter = ref.watch(selectedOrgProvider);
+    // Wait for saved org filter to load before making API calls
+    final orgFilter = ref.watch(selectedOrgProvider).valueOrNull;
     _endCursor = null;
     _hasNextPage = true;
 
@@ -426,7 +429,7 @@ class ReviewedPrListNotifier extends AsyncNotifier<List<ReviewedPullRequestModel
     if (!_hasNextPage) return;
     final currentItems = state.value ?? [];
     final prRepo = ref.read(prRepositoryProvider);
-    final orgFilter = ref.read(selectedOrgProvider);
+    final orgFilter = ref.read(selectedOrgProvider).valueOrNull;
 
     try {
       final result = await prRepo.getReviewedPrs(
@@ -452,7 +455,7 @@ class ReviewedPrListNotifier extends AsyncNotifier<List<ReviewedPullRequestModel
   Future<void> _refreshNetworkSilent() async {
     try {
       final prRepo = ref.read(prRepositoryProvider);
-      final orgFilter = ref.read(selectedOrgProvider);
+      final orgFilter = ref.read(selectedOrgProvider).valueOrNull;
       final result = await prRepo.getReviewedPrs(orgFilter: orgFilter);
       _endCursor = result.endCursor;
       _hasNextPage = result.hasNextPage;
@@ -466,7 +469,7 @@ class ReviewedPrListNotifier extends AsyncNotifier<List<ReviewedPullRequestModel
     state = const AsyncValue.loading();
     try {
       final prRepo = ref.read(prRepositoryProvider);
-      final orgFilter = ref.read(selectedOrgProvider);
+      final orgFilter = ref.read(selectedOrgProvider).valueOrNull;
       final result = await prRepo.getReviewedPrs(orgFilter: orgFilter);
       _endCursor = result.endCursor;
       _hasNextPage = result.hasNextPage;
@@ -547,32 +550,28 @@ class RecentlyCreatedPrListNotifier extends AsyncNotifier<List<CreatedPullReques
 // Organization Filter Provider
 // ============================================================================
 
-final selectedOrgProvider = NotifierProvider<SelectedOrgNotifier, String?>(() {
+final selectedOrgProvider =
+    AsyncNotifierProvider<SelectedOrgNotifier, String?>(() {
   return SelectedOrgNotifier();
 });
 
-class SelectedOrgNotifier extends Notifier<String?> {
+class SelectedOrgNotifier extends AsyncNotifier<String?> {
   @override
-  String? build() {
-    // Load saved selection on startup
-    _loadSavedOrg();
-    return null;
-  }
-
-  Future<void> _loadSavedOrg() async {
+  Future<String?> build() async {
+    // Load saved selection on startup - await ensures dependent providers
+    // don't make API calls until we know the saved org filter
     try {
       final orgRepo = ref.read(organizationRepositoryProvider);
       final savedOrg = await orgRepo.getSelectedOrganization();
-      if (savedOrg != null) {
-        state = savedOrg;
-      }
+      return savedOrg;
     } catch (e) {
-      // Ignore errors loading saved org
+      // Ignore errors loading saved org, default to null (all orgs)
+      return null;
     }
   }
 
   Future<void> setOrg(String? orgLogin) async {
-    state = orgLogin;
+    state = AsyncValue.data(orgLogin);
 
     // Persist the selection
     try {
