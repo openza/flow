@@ -49,9 +49,8 @@ class _TokenScreenState extends ConsumerState<TokenScreen> {
     final uri = Uri.parse(
       'https://github.com/settings/tokens/new?description=GitDesk&scopes=repo,read:user',
     );
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    }
+    // Use platformDefault - works better with Flatpak portals
+    await launchUrl(uri, mode: LaunchMode.platformDefault);
   }
 
   @override

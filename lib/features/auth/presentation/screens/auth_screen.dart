@@ -96,9 +96,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
 
   Future<void> _openGitHubDevice() async {
     final url = Uri.parse(AppConstants.githubDeviceVerificationUrl);
-    if (await canLaunchUrl(url)) {
-      await launchUrl(url, mode: LaunchMode.externalApplication);
-    }
+    // Use platformDefault - works better with Flatpak portals
+    await launchUrl(url, mode: LaunchMode.platformDefault);
   }
 
   void _navigateToTokenScreen() {

@@ -62,9 +62,8 @@ class _PrCardState extends State<PrCard> with SingleTickerProviderStateMixin {
 
   Future<void> _openPr() async {
     final uri = Uri.parse(widget.pr.htmlUrl);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    }
+    // Use platformDefault - works better with Flatpak portals
+    await launchUrl(uri, mode: LaunchMode.platformDefault);
   }
 
   @override
@@ -417,9 +416,8 @@ class _ReviewedPrCardState extends State<ReviewedPrCard> {
 
   Future<void> _openPr() async {
     final uri = Uri.parse(widget.pr.htmlUrl);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    }
+    // Use platformDefault - works better with Flatpak portals
+    await launchUrl(uri, mode: LaunchMode.platformDefault);
   }
 
   Color _getReviewStateColor(ColorScheme scheme) {
@@ -728,9 +726,8 @@ class _CreatedPrCardState extends State<CreatedPrCard> {
 
   Future<void> _openPr() async {
     final uri = Uri.parse(widget.pr.htmlUrl);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    }
+    // Use platformDefault - works better with Flatpak portals
+    await launchUrl(uri, mode: LaunchMode.platformDefault);
   }
 
   Color _getMergeStateColor(ColorScheme scheme) {

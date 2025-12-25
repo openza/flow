@@ -78,9 +78,9 @@ class OAuthService {
       onStatusChange(DeviceFlowStatus.waitingForUser, deviceCodeInfo.userCode);
 
       final verificationUrl = Uri.parse(deviceCodeInfo.verificationUri);
-      if (await canLaunchUrl(verificationUrl)) {
-        await launchUrl(verificationUrl, mode: LaunchMode.externalApplication);
-      }
+      // Use platformDefault - works better with Flatpak portals
+      // Skip canLaunchUrl check as it may return false in sandboxed environments
+      await launchUrl(verificationUrl, mode: LaunchMode.platformDefault);
 
       // Step 3: Poll for access token
       onStatusChange(DeviceFlowStatus.polling, deviceCodeInfo.userCode);
