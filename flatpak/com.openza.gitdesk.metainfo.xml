@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>com.openza.gitdesk</id>
+  <name>GitDesk</name>
+  <summary>GitHub PR review inbox for your desktop</summary>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MIT</project_license>
+  <developer id="com.openza">
+    <name>Openza</name>
+  </developer>
+  <description>
+    <p>
+      GitDesk is a desktop application that helps you stay on top of your GitHub
+      pull request reviews. See all PRs waiting for your review in one place.
+    </p>
+    <p>Features:</p>
+    <ul>
+      <li>View PRs requiring your review</li>
+      <li>View PRs you created</li>
+      <li>View PRs you reviewed</li>
+      <li>Filter by organization</li>
+      <li>Desktop notifications for new PRs</li>
+      <li>Auto-refresh every 5 minutes</li>
+      <li>Dark and light theme support</li>
+      <li>Secure GitHub OAuth authentication</li>
+    </ul>
+  </description>
+  <launchable type="desktop-id">com.openza.gitdesk.desktop</launchable>
+  <url type="homepage">https://github.com/openza/gitdesk</url>
+  <url type="bugtracker">https://github.com/openza/gitdesk/issues</url>
+  <content_rating type="oars-1.1" />
+  <categories>
+    <category>Development</category>
+    <category>Utility</category>
+  </categories>
+  <keywords>
+    <keyword>github</keyword>
+    <keyword>pull-request</keyword>
+    <keyword>code-review</keyword>
+    <keyword>git</keyword>
+    <keyword>developer</keyword>
+    <keyword>productivity</keyword>
+  </keywords>
+  <releases>
+    <release version="0.2.0" date="2025-12-25">
+      <description>
+        <p>Added GitHub OAuth and organization filter</p>
+        <ul>
+          <li>GitHub OAuth Device Flow for secure authentication</li>
+          <li>Organization filter to scope PR views</li>
+          <li>Fixed race conditions in async initialization</li>
+          <li>Fixed URL opening in Flatpak sandbox</li>
+        </ul>
+      </description>
+    </release>
+    <release version="0.1.0" date="2025-12-17">
+      <description>
+        <p>Initial release</p>
+        <ul>
+          <li>View PRs requiring your review</li>
+          <li>View PRs you created and reviewed</li>
+          <li>Desktop notifications</li>
+          <li>AppImage and Flatpak packaging</li>
+        </ul>
+      </description>
+    </release>
+  </releases>
+  <branding>
+    <color type="primary" scheme_preference="light">#2563eb</color>
+    <color type="primary" scheme_preference="dark">#1e40af</color>
+  </branding>
+</component>

@@ -18,6 +18,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Flatpak: URL opening now works correctly (portal + platformDefault)
 - OAuth screen now displays correct app logo
 
+### Changed
+- Added AppStream metainfo for better software center integration
+
 ## [0.1.0] - 2025-12-17
 
 ### Added

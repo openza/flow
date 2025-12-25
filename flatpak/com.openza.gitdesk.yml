@@ -29,6 +29,7 @@ modules:
       - ln -s /app/gitdesk/gitdesk /app/bin/gitdesk
       - install -Dm644 gitdesk.desktop /app/share/applications/com.openza.gitdesk.desktop
       - install -Dm644 icon.png /app/share/icons/hicolor/256x256/apps/com.openza.gitdesk.png
+      - install -Dm644 metainfo.xml /app/share/metainfo/com.openza.gitdesk.metainfo.xml
     sources:
       - type: dir
         path: ../build/linux/x64/release/bundle
@@ -38,3 +39,6 @@ modules:
         dest-filename: gitdesk.desktop
       - type: file
         path: ../assets/icon/icon.png
+      - type: file
+        path: com.openza.gitdesk.metainfo.xml
+        dest-filename: metainfo.xml
