@@ -62,27 +62,30 @@ jobs:
         id: get_version
         run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
 
+      - name: Extract changelog for version
+        id: changelog
+        run: |
+          # Extract changelog section for this version
+          VERSION="${{ steps.get_version.outputs.VERSION }}"
+          CHANGELOG=$(awk "/^## \[$VERSION\]/{flag=1; next} /^## \[/{flag=0} flag" CHANGELOG.md)
+          # Handle multi-line output
+          echo "CONTENT<<EOF" >> $GITHUB_OUTPUT
+          echo "$CHANGELOG" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
           name: GitDesk v${{ steps.get_version.outputs.VERSION }}
-          draft: false
+          draft: true
           prerelease: false
           files: |
             GitDesk-*.AppImage
             GitDesk-*.flatpak
           body: |
-            ## GitDesk v${{ steps.get_version.outputs.VERSION }}
+            ${{ steps.changelog.outputs.CONTENT }}
 
-            ### Download
-            - **AppImage**: Download `.AppImage`, make executable (`chmod +x`), and run
-            - **Flatpak**: Download `.flatpak` and install with `flatpak install GitDesk-*.flatpak`
-
-            ### System Requirements
-            - **AppImage**: Ubuntu 22.04+, Fedora 35+, Debian 12+ (GLIBC 2.34+)
-            - **Flatpak**: Any Linux with Flatpak installed
-
-            ### What's New
-            See [CHANGELOG](https://github.com/openza/gitdesk/blob/main/CHANGELOG.md) for details.
+            ---
+            **Installation:** Download the AppImage (make executable with `chmod +x`) or Flatpak and install.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
