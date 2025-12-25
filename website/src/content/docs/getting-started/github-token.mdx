@@ -1,62 +1,90 @@
 ---
-title: GitHub Token Setup
-description: How to set up your GitHub Personal Access Token for GitDesk
+title: Authentication
+description: How to authenticate GitDesk with your GitHub account
 ---
 
-import { Steps, Aside } from '@astrojs/starlight/components';
+import { Steps, Aside, Tabs, TabItem } from '@astrojs/starlight/components';
 
-# GitHub Token Setup
+# Authentication
 
-GitDesk uses a GitHub Personal Access Token (PAT) to access your pull request data.
+GitDesk needs access to your GitHub account to fetch your pull requests. You can authenticate using GitHub OAuth (recommended) or a Personal Access Token.
+
+## Sign in with GitHub (Recommended)
+
+The easiest way to connect is using GitHub's secure OAuth device flow.
+
+<Steps>
+1. Launch GitDesk and click **"Sign in with GitHub"**
+
+2. A browser window opens to GitHub's device activation page
+
+3. Enter the code shown in GitDesk
+
+4. Click **"Authorize"** to grant GitDesk access
+
+5. Return to GitDesk - you're now signed in!
+</Steps>
+
+<Aside type="tip">
+  OAuth tokens are automatically managed and stored securely. No need to create or manage tokens manually.
+</Aside>
+
+## Personal Access Token (Alternative)
+
+If you prefer, you can use a Personal Access Token instead.
+
+<Steps>
+1. Click **"Use personal access token"** on the sign-in screen
+
+2. Go to [GitHub Settings > Developer settings > Personal access tokens](https://github.com/settings/tokens)
+
+3. Click **"Generate new token (classic)"**
+
+4. Give your token a descriptive name (e.g., "GitDesk Desktop")
+
+5. Select the required scopes:
+   - `repo` - Full control of private repositories
+   - `read:user` - Read your profile information
+
+6. Click **"Generate token"** and copy it
+
+7. Paste the token in GitDesk and click **"Connect"**
+</Steps>
 
 <Aside type="caution">
   Keep your token secure! Never share it or commit it to version control.
 </Aside>
 
-## Creating a Personal Access Token
+## Token Storage
 
-<Steps>
-1. Go to [GitHub Settings > Developer settings > Personal access tokens](https://github.com/settings/tokens)
+Your credentials are stored securely using your system's secret storage:
 
-2. Click **"Generate new token (classic)"**
+| System | Storage |
+|--------|---------|
+| GNOME | GNOME Keyring |
+| KDE | KWallet |
+| Other | Secret Service API |
 
-3. Give your token a descriptive name (e.g., "GitDesk Desktop")
+## Organization Filter
 
-4. Select the required scopes:
-   - `repo` - Full control of private repositories (required for PR access)
-   - `read:user` - Read your profile information
+After signing in, you can filter PRs by organization:
 
-5. Click **"Generate token"**
+1. Click the organization dropdown in the header
+2. Select a specific organization or "All Organizations"
+3. PR lists will update to show only PRs from that organization
 
-6. **Copy the token immediately** - you won't be able to see it again!
-</Steps>
-
-## Adding the Token to GitDesk
-
-<Steps>
-1. Launch GitDesk
-
-2. Paste your token in the authentication screen
-
-3. Click **"Connect"**
-
-4. Your PRs will start loading
-</Steps>
-
-<Aside type="tip">
-  Your token is stored securely using your system's secret storage (GNOME Keyring, KWallet, etc.).
+<Aside type="note">
+  The organization filter is remembered across sessions.
 </Aside>
-
-## Token Permissions Explained
-
-| Scope | Why It's Needed |
-|-------|----------------|
-| `repo` | Access to view PRs in private and public repositories |
-| `read:user` | Display your username and avatar |
 
 ## Troubleshooting
 
-### "Bad Credentials" Error
+### OAuth Flow Not Opening Browser
+
+- Ensure you have a default browser configured
+- Try clicking "Open GitHub" manually if the browser doesn't open automatically
+
+### "Bad Credentials" Error (PAT)
 
 - Ensure you copied the entire token
 - Check that the token hasn't expired
@@ -67,3 +95,11 @@ GitDesk uses a GitHub Personal Access Token (PAT) to access your pull request da
 - Ensure your system's secret storage service is running
 - On GNOME, check that `gnome-keyring` is installed
 - On KDE, check that `kwallet` is running
+
+## Sign Out
+
+To sign out or switch accounts:
+
+1. Click the settings/menu icon
+2. Select **"Sign Out"**
+3. You'll return to the authentication screen
