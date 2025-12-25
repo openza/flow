@@ -3,11 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/constants/app_constants.dart';
 import 'core/theme/app_theme.dart';
-import 'features/auth/presentation/providers/auth_provider.dart';
-import 'features/auth/presentation/screens/token_screen.dart';
-import 'features/pull_requests/presentation/screens/pr_list_screen.dart';
-
 import 'core/theme/theme_provider.dart';
+import 'features/auth/presentation/providers/auth_provider.dart';
+import 'features/auth/presentation/screens/auth_screen.dart';
+import 'features/pull_requests/presentation/screens/pr_list_screen.dart';
 
 class GitDeskApp extends ConsumerWidget {
   const GitDeskApp({super.key});
@@ -28,14 +27,14 @@ class GitDeskApp extends ConsumerWidget {
           if (isAuthenticated) {
             return const PrListScreen();
           }
-          return const TokenScreen();
+          return const AuthScreen();
         },
         loading: () => const Scaffold(
           body: Center(
             child: CircularProgressIndicator(),
           ),
         ),
-        error: (error, stack) => const TokenScreen(),
+        error: (error, stack) => const AuthScreen(),
       ),
     );
   }

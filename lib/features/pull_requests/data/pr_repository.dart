@@ -30,11 +30,18 @@ class PrRepository {
   static const _reviewedPrsKey = 'reviewed_prs';
   static const _recentlyCreatedPrsKey = 'recently_created_prs';
 
-  Future<PaginatedResult<PullRequestModel>> getReviewRequests({String? afterCursor}) async {
+  Future<PaginatedResult<PullRequestModel>> getReviewRequests({
+    String? afterCursor,
+    String? orgFilter,
+  }) async {
     final username = await _tokenRepository.getUsername();
     if (username == null) throw Exception('Not authenticated');
 
-    final query = 'type:pr state:open review-requested:$username sort:updated-desc';
+    String query = 'type:pr state:open review-requested:$username';
+    if (orgFilter != null && orgFilter.isNotEmpty) {
+      query += ' org:$orgFilter';
+    }
+    query += ' sort:updated-desc';
     final result = await _searchPullRequests(query, afterCursor: afterCursor);
 
     // Cache ONLY the first page
@@ -59,11 +66,18 @@ class PrRepository {
     return PaginatedResult(items: items, hasNextPage: false);
   }
 
-  Future<PaginatedResult<PullRequestModel>> getCreatedPrs({String? afterCursor}) async {
+  Future<PaginatedResult<PullRequestModel>> getCreatedPrs({
+    String? afterCursor,
+    String? orgFilter,
+  }) async {
     final username = await _tokenRepository.getUsername();
     if (username == null) throw Exception('Not authenticated');
 
-    final query = 'author:$username type:pr state:open sort:updated-desc';
+    String query = 'author:$username type:pr state:open';
+    if (orgFilter != null && orgFilter.isNotEmpty) {
+      query += ' org:$orgFilter';
+    }
+    query += ' sort:updated-desc';
     final result = await _searchPullRequests(query, afterCursor: afterCursor);
 
     if (afterCursor == null) {
@@ -85,11 +99,18 @@ class PrRepository {
     return PaginatedResult(items: items, hasNextPage: false);
   }
 
-  Future<PaginatedResult<ReviewedPullRequestModel>> getReviewedPrs({String? afterCursor}) async {
+  Future<PaginatedResult<ReviewedPullRequestModel>> getReviewedPrs({
+    String? afterCursor,
+    String? orgFilter,
+  }) async {
     final username = await _tokenRepository.getUsername();
     if (username == null) throw Exception('Not authenticated');
 
-    final query = 'type:pr reviewed-by:$username -author:$username sort:updated-desc';
+    String query = 'type:pr reviewed-by:$username -author:$username';
+    if (orgFilter != null && orgFilter.isNotEmpty) {
+      query += ' org:$orgFilter';
+    }
+    query += ' sort:updated-desc';
     
     final client = await _graphQLService.client;
     

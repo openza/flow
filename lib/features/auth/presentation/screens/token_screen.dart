@@ -58,8 +58,19 @@ class _TokenScreenState extends ConsumerState<TokenScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final canPop = Navigator.of(context).canPop();
 
     return Scaffold(
+      appBar: canPop
+          ? AppBar(
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back_rounded),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+            )
+          : null,
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(AppConstants.largePadding),
@@ -71,9 +82,9 @@ class _TokenScreenState extends ConsumerState<TokenScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // App icon/logo
+                  // Key icon for PAT
                   Icon(
-                    Icons.inbox_rounded,
+                    Icons.key_rounded,
                     size: 64,
                     color: colorScheme.primary,
                   ),
@@ -81,23 +92,25 @@ class _TokenScreenState extends ConsumerState<TokenScreen> {
 
                   // Title
                   Text(
-                    AppConstants.appName,
-                    style: theme.textTheme.headlineLarge,
+                    'Personal Access Token',
+                    style: theme.textTheme.headlineMedium,
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: AppConstants.smallPadding),
 
                   // Subtitle
                   Text(
-                    'GitHub PR Review Inbox',
-                    style: theme.textTheme.bodyMedium,
+                    'Manual authentication for advanced users',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.textTheme.bodyMedium?.color?.withOpacity(0.7),
+                    ),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: AppConstants.largePadding * 2),
 
-                  // Token input
+                  // Token input label
                   Text(
-                    'Personal Access Token',
+                    'Enter your GitHub token',
                     style: theme.textTheme.titleMedium,
                   ),
                   const SizedBox(height: AppConstants.smallPadding),

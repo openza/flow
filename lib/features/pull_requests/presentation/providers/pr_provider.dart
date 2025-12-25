@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/services/notification_service.dart';
+import '../../../auth/data/organization_repository.dart';
 import '../../data/pr_repository.dart';
 import '../../domain/models/pull_request.dart';
 
@@ -31,6 +32,7 @@ class PrListNotifier extends AsyncNotifier<List<PullRequestModel>> {
     });
 
     final query = ref.watch(prSearchQueryProvider);
+    final orgFilter = ref.watch(selectedOrgProvider);
     final prRepo = ref.read(prRepositoryProvider);
     
     // Reset pagination
@@ -42,50 +44,58 @@ class PrListNotifier extends AsyncNotifier<List<PullRequestModel>> {
       // Search Mode (Server-Side)
       // ------------------------------------------------------------------
       _autoRefreshTimer?.cancel(); // No auto-refresh during search
-      
-      final result = await prRepo.searchPullRequests(query);
+
+      // Add org filter to search query if specified
+      String searchQuery = query;
+      if (orgFilter != null && orgFilter.isNotEmpty) {
+        searchQuery = '$query org:$orgFilter';
+      }
+
+      final result = await prRepo.searchPullRequests(searchQuery);
       _endCursor = result.endCursor;
       _hasNextPage = result.hasNextPage;
-      
+
       // Sort by updatedAt descending (most recent first)
       final sorted = List<PullRequestModel>.from(result.items)
         ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
-      
+
       return sorted;
     } else {
       // ------------------------------------------------------------------
       // Default Mode (Review Requests)
       // ------------------------------------------------------------------
-      
-      // Try to load from cache first
-      try {
-        final cached = await prRepo.getCachedReviewRequests();
-        if (cached.items.isNotEmpty) {
-          _knownPrIds = cached.items.map((pr) => pr.id).toSet();
-          _isFirstLoad = false;
-          
-          // Trigger network refresh in background
-          Future.microtask(() => _refreshNetworkSilent());
-          
-          _startAutoRefresh();
-          
-          // Sort by updatedAt descending (most recent first)
-          final sorted = List<PullRequestModel>.from(cached.items)
-            ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
-          
-          // Debug: Print cache load
-          print('=== LOADING FROM CACHE ===');
-          for (var i = 0; i < sorted.length && i < 3; i++) {
-            print('${i + 1}. ${sorted[i].title}');
-            print('   Updated: ${sorted[i].updatedAt}');
-            print('   Created: ${sorted[i].createdAt}');
+
+      // Try to load from cache first - skip cache if org filter is active
+      if (orgFilter == null) {
+        try {
+          final cached = await prRepo.getCachedReviewRequests();
+          if (cached.items.isNotEmpty) {
+            _knownPrIds = cached.items.map((pr) => pr.id).toSet();
+            _isFirstLoad = false;
+
+            // Trigger network refresh in background
+            Future.microtask(() => _refreshNetworkSilent());
+
+            _startAutoRefresh();
+
+            // Sort by updatedAt descending (most recent first)
+            final sorted = List<PullRequestModel>.from(cached.items)
+              ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+
+            // Debug: Print cache load
+            print('=== LOADING FROM CACHE ===');
+            for (var i = 0; i < sorted.length && i < 3; i++) {
+              print('${i + 1}. ${sorted[i].title}');
+              print('   Updated: ${sorted[i].updatedAt}');
+              print('   Created: ${sorted[i].createdAt}');
+            }
+            print('==========================');
+
+            return sorted;
           }
-          print('==========================');
-          
-          return sorted;
+        } catch (e) {
+          // Ignore cache errors
         }
-      } catch (e) {
-        // Ignore cache errors
       }
 
       // Fallback to network
@@ -119,11 +129,15 @@ class PrListNotifier extends AsyncNotifier<List<PullRequestModel>> {
   Future<dynamic> _fetchPullRequests({String? cursor}) async {
     final prRepo = ref.read(prRepositoryProvider);
     final query = ref.read(prSearchQueryProvider);
-    
+    final orgFilter = ref.read(selectedOrgProvider);
+
     if (query.isNotEmpty) {
       return await prRepo.searchPullRequests(query, afterCursor: cursor);
     } else {
-      final result = await prRepo.getReviewRequests(afterCursor: cursor);
+      final result = await prRepo.getReviewRequests(
+        afterCursor: cursor,
+        orgFilter: orgFilter,
+      );
       
       if (cursor == null) {
         // Only update notifications/known IDs on initial page load (refresh)
@@ -250,37 +264,40 @@ class CreatedPrListNotifier extends AsyncNotifier<List<PullRequestModel>> {
     });
 
     final prRepo = ref.read(prRepositoryProvider);
+    final orgFilter = ref.watch(selectedOrgProvider);
 
     _endCursor = null;
     _hasNextPage = true;
 
-    // Cache logic
-    try {
-      final cached = await prRepo.getCachedCreatedPrs();
-      if (cached.items.isNotEmpty) {
-        Future.microtask(() => _refreshNetworkSilent());
-        _startAutoRefresh();
-        
-        // Sort by updatedAt descending (most recent first)
-        final sorted = List<PullRequestModel>.from(cached.items)
-          ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
-        
-        return sorted;
+    // Cache logic - skip cache if org filter is active
+    if (orgFilter == null) {
+      try {
+        final cached = await prRepo.getCachedCreatedPrs();
+        if (cached.items.isNotEmpty) {
+          Future.microtask(() => _refreshNetworkSilent());
+          _startAutoRefresh();
+
+          // Sort by updatedAt descending (most recent first)
+          final sorted = List<PullRequestModel>.from(cached.items)
+            ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+
+          return sorted;
+        }
+      } catch (e) {
+        // ignore
       }
-    } catch (e) {
-      // ignore
     }
 
-    final result = await prRepo.getCreatedPrs();
+    final result = await prRepo.getCreatedPrs(orgFilter: orgFilter);
     _endCursor = result.endCursor;
     _hasNextPage = result.hasNextPage;
-    
+
     _startAutoRefresh();
-    
+
     // Sort by updatedAt descending (most recent first)
     final sorted = List<PullRequestModel>.from(result.items)
       ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
-    
+
     return sorted;
   }
 
@@ -288,16 +305,20 @@ class CreatedPrListNotifier extends AsyncNotifier<List<PullRequestModel>> {
     if (!_hasNextPage) return;
     final currentItems = state.value ?? [];
     final prRepo = ref.read(prRepositoryProvider);
-    
+    final orgFilter = ref.read(selectedOrgProvider);
+
     try {
-      final result = await prRepo.getCreatedPrs(afterCursor: _endCursor);
+      final result = await prRepo.getCreatedPrs(
+        afterCursor: _endCursor,
+        orgFilter: orgFilter,
+      );
       _endCursor = result.endCursor;
       _hasNextPage = result.hasNextPage;
-      
+
       // Combine and sort all items
       final allItems = <PullRequestModel>[...currentItems, ...result.items];
       allItems.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
-      
+
       state = AsyncValue.data(allItems);
     } catch (e) {
       // ignore
@@ -315,14 +336,15 @@ class CreatedPrListNotifier extends AsyncNotifier<List<PullRequestModel>> {
   Future<void> _refreshNetworkSilent() async {
     try {
       final prRepo = ref.read(prRepositoryProvider);
-      final result = await prRepo.getCreatedPrs(); // First page
+      final orgFilter = ref.read(selectedOrgProvider);
+      final result = await prRepo.getCreatedPrs(orgFilter: orgFilter);
       _endCursor = result.endCursor;
       _hasNextPage = result.hasNextPage;
-      
+
       // Sort by updatedAt descending (most recent first)
       final sorted = List<PullRequestModel>.from(result.items)
         ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
-      
+
       state = AsyncValue.data(sorted);
     } catch (e) {
       // silent
@@ -333,14 +355,15 @@ class CreatedPrListNotifier extends AsyncNotifier<List<PullRequestModel>> {
     state = const AsyncValue.loading();
     try {
       final prRepo = ref.read(prRepositoryProvider);
-      final result = await prRepo.getCreatedPrs();
+      final orgFilter = ref.read(selectedOrgProvider);
+      final result = await prRepo.getCreatedPrs(orgFilter: orgFilter);
       _endCursor = result.endCursor;
       _hasNextPage = result.hasNextPage;
-      
+
       // Sort by updatedAt descending (most recent first)
       final sorted = List<PullRequestModel>.from(result.items)
         ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
-      
+
       state = AsyncValue.data(sorted);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
@@ -374,34 +397,42 @@ class ReviewedPrListNotifier extends AsyncNotifier<List<ReviewedPullRequestModel
     });
 
     final prRepo = ref.read(prRepositoryProvider);
+    final orgFilter = ref.watch(selectedOrgProvider);
     _endCursor = null;
     _hasNextPage = true;
-    
-    try {
-      final cached = await prRepo.getCachedReviewedPrs();
-      if (cached.items.isNotEmpty) {
-        Future.microtask(() => _refreshNetworkSilent());
-        _startAutoRefresh();
-        return cached.items;
+
+    // Cache logic - skip cache if org filter is active
+    if (orgFilter == null) {
+      try {
+        final cached = await prRepo.getCachedReviewedPrs();
+        if (cached.items.isNotEmpty) {
+          Future.microtask(() => _refreshNetworkSilent());
+          _startAutoRefresh();
+          return cached.items;
+        }
+      } catch (e) {
+        // ignore
       }
-    } catch (e) {
-      // ignore
     }
-    
-    final result = await prRepo.getReviewedPrs();
+
+    final result = await prRepo.getReviewedPrs(orgFilter: orgFilter);
     _endCursor = result.endCursor;
     _hasNextPage = result.hasNextPage;
     _startAutoRefresh();
     return result.items;
   }
-  
+
   Future<void> loadMore() async {
     if (!_hasNextPage) return;
     final currentItems = state.value ?? [];
     final prRepo = ref.read(prRepositoryProvider);
-    
+    final orgFilter = ref.read(selectedOrgProvider);
+
     try {
-      final result = await prRepo.getReviewedPrs(afterCursor: _endCursor);
+      final result = await prRepo.getReviewedPrs(
+        afterCursor: _endCursor,
+        orgFilter: orgFilter,
+      );
       _endCursor = result.endCursor;
       _hasNextPage = result.hasNextPage;
       state = AsyncValue.data([...currentItems, ...result.items]);
@@ -419,22 +450,24 @@ class ReviewedPrListNotifier extends AsyncNotifier<List<ReviewedPullRequestModel
   }
 
   Future<void> _refreshNetworkSilent() async {
-     try {
-       final prRepo = ref.read(prRepositoryProvider);
-       final result = await prRepo.getReviewedPrs();
-       _endCursor = result.endCursor;
-       _hasNextPage = result.hasNextPage;
-       state = AsyncValue.data(result.items);
-     } catch (e) {
-       // ignore
-     }
+    try {
+      final prRepo = ref.read(prRepositoryProvider);
+      final orgFilter = ref.read(selectedOrgProvider);
+      final result = await prRepo.getReviewedPrs(orgFilter: orgFilter);
+      _endCursor = result.endCursor;
+      _hasNextPage = result.hasNextPage;
+      state = AsyncValue.data(result.items);
+    } catch (e) {
+      // ignore
+    }
   }
 
   Future<void> refresh() async {
     state = const AsyncValue.loading();
     try {
       final prRepo = ref.read(prRepositoryProvider);
-      final result = await prRepo.getReviewedPrs();
+      final orgFilter = ref.read(selectedOrgProvider);
+      final result = await prRepo.getReviewedPrs(orgFilter: orgFilter);
       _endCursor = result.endCursor;
       _hasNextPage = result.hasNextPage;
       state = AsyncValue.data(result.items);
@@ -507,5 +540,47 @@ class RecentlyCreatedPrListNotifier extends AsyncNotifier<List<CreatedPullReques
     } catch (e, st) {
       state = AsyncValue.error(e, st);
     }
+  }
+}
+
+// ============================================================================
+// Organization Filter Provider
+// ============================================================================
+
+final selectedOrgProvider = NotifierProvider<SelectedOrgNotifier, String?>(() {
+  return SelectedOrgNotifier();
+});
+
+class SelectedOrgNotifier extends Notifier<String?> {
+  @override
+  String? build() {
+    // Load saved selection on startup
+    _loadSavedOrg();
+    return null;
+  }
+
+  Future<void> _loadSavedOrg() async {
+    try {
+      final orgRepo = ref.read(organizationRepositoryProvider);
+      final savedOrg = await orgRepo.getSelectedOrganization();
+      if (savedOrg != null) {
+        state = savedOrg;
+      }
+    } catch (e) {
+      // Ignore errors loading saved org
+    }
+  }
+
+  Future<void> setOrg(String? orgLogin) async {
+    state = orgLogin;
+
+    // Persist the selection
+    try {
+      final orgRepo = ref.read(organizationRepositoryProvider);
+      await orgRepo.saveSelectedOrganization(orgLogin);
+    } catch (e) {
+      // Ignore errors saving org
+    }
+    // PR list providers watch selectedOrgProvider, so they rebuild automatically
   }
 }

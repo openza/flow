@@ -9,6 +9,7 @@ import '../../../../core/theme/theme_provider.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../domain/models/pull_request.dart';
 import '../providers/pr_provider.dart';
+import '../widgets/org_filter_dropdown.dart';
 import '../widgets/paginated_pr_list.dart';
 import '../widgets/pr_card.dart';
 
@@ -175,6 +176,10 @@ class _PrListScreenState extends ConsumerState<PrListScreen>
                 ),
 
                 const Spacer(),
+
+                // Organization filter dropdown
+                const OrgFilterDropdown(),
+                const SizedBox(width: AppConstants.smallPadding),
 
                 // Search field
                 SizedBox(
