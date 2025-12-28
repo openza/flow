@@ -34,6 +34,6 @@ cd flatpak
 flatpak-builder --force-clean --repo=repo build-dir com.openza.flow.yml
 
 # Create bundle
-flatpak build-bundle repo "../Flow-$VERSION.flatpak" "$APP_ID"
+flatpak build-bundle repo "../Openza-Flow-$VERSION.flatpak" "$APP_ID"
 
-echo "Flatpak bundle created: Flow-$VERSION.flatpak"
+echo "Flatpak bundle created: Openza-Flow-$VERSION.flatpak"

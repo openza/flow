@@ -4,7 +4,7 @@ set -e
 # Openza Flow AppImage Build Script
 # This script packages the Flutter Linux build into an AppImage
 
-APP_NAME="Flow"
+APP_NAME="Openza-Flow"
 APP_ID="com.openza.flow"
 BINARY_NAME="flow"
 VERSION=$(grep 'version:' pubspec.yaml | head -1 | sed 's/version: //' | sed 's/+.*//')
