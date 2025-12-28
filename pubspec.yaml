@@ -74,6 +74,9 @@ dev_dependencies:
   mocktail: ^1.0.4
   flutter_launcher_icons: ^0.14.4
 
+  # Windows Inno Setup Installer
+  inno_bundle: ^0.11.2
+
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 
@@ -133,3 +136,13 @@ flutter_launcher_icons:
   macos:
     generate: true
     image_path: "assets/icon/icon.png"
+
+inno_bundle:
+  id: 7b4e2f9a-3c81-4d5e-9f6a-8c2b1e0d4a3f
+  publisher: Openza
+  name: Openza Flow
+  icon_path: assets/icon/icon.png
+  license_path: LICENSE
+  admin: false
+  languages:
+    - english
