@@ -1,13 +1,15 @@
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
+import sitemap from '@astrojs/sitemap';
 
 export default defineConfig({
   site: 'https://openza.github.io',
   base: '/flow',
   integrations: [
+    sitemap(),
     starlight({
       title: 'Openza Flow',
-      description: 'Documentation for Openza Flow - GitHub PR Review Inbox for Linux',
+      description: 'Documentation for Openza Flow - GitHub PR Review Inbox for Windows and Linux',
       logo: {
         src: './src/assets/logo.svg',
       },
