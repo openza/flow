@@ -16,7 +16,7 @@
   <circle cx="120" cy="64" r="7" fill="#28c840"/>
 
   <!-- Title -->
-  <text x="600" y="70" font-family="system-ui, sans-serif" font-size="16" fill="#8b949e" text-anchor="middle">GitDesk - PR Review Inbox</text>
+  <text x="600" y="70" font-family="system-ui, sans-serif" font-size="16" fill="#8b949e" text-anchor="middle">Openza Flow - PR Review Inbox</text>
 
   <!-- Tabs -->
   <rect x="60" y="105" width="150" height="38" rx="6" fill="#00d9ff" fill-opacity="0.15"/>
@@ -36,7 +36,7 @@
   <circle cx="105" cy="255" r="24" fill="#238636"/>
   <text x="105" y="262" font-family="system-ui, sans-serif" font-size="18" fill="white" text-anchor="middle" font-weight="600">PR</text>
   <text x="150" y="235" font-family="system-ui, sans-serif" font-size="17" fill="#e6edf3" font-weight="600">feat: Add dark mode support for the entire application</text>
-  <text x="150" y="260" font-family="system-ui, sans-serif" font-size="14" fill="#8b949e">openza/gitdesk #42 opened by johndoe</text>
+  <text x="150" y="260" font-family="system-ui, sans-serif" font-size="14" fill="#8b949e">openza/flow #42 opened by johndoe</text>
   <rect x="150" y="275" width="70" height="22" rx="11" fill="#238636" fill-opacity="0.2"/>
   <text x="185" y="290" font-family="system-ui, sans-serif" font-size="12" fill="#3fb950" text-anchor="middle">feature</text>
   <rect x="230" y="275" width="90" height="22" rx="11" fill="#1f6feb" fill-opacity="0.2"/>
@@ -48,7 +48,7 @@
   <circle cx="105" cy="380" r="24" fill="#a371f7"/>
   <text x="105" y="387" font-family="system-ui, sans-serif" font-size="18" fill="white" text-anchor="middle" font-weight="600">PR</text>
   <text x="150" y="360" font-family="system-ui, sans-serif" font-size="17" fill="#e6edf3" font-weight="600">fix: Resolve OAuth token refresh causing logout</text>
-  <text x="150" y="385" font-family="system-ui, sans-serif" font-size="14" fill="#8b949e">openza/gitdesk #41 opened by janedoe</text>
+  <text x="150" y="385" font-family="system-ui, sans-serif" font-size="14" fill="#8b949e">openza/flow #41 opened by janedoe</text>
   <rect x="150" y="400" width="45" height="22" rx="11" fill="#da3633" fill-opacity="0.2"/>
   <text x="172" y="415" font-family="system-ui, sans-serif" font-size="12" fill="#f85149" text-anchor="middle">bug</text>
   <rect x="205" y="400" width="55" height="22" rx="11" fill="#f0883e" fill-opacity="0.2"/>
@@ -60,7 +60,7 @@
   <circle cx="105" cy="505" r="24" fill="#00d9ff"/>
   <text x="105" y="512" font-family="system-ui, sans-serif" font-size="18" fill="white" text-anchor="middle" font-weight="600">PR</text>
   <text x="150" y="485" font-family="system-ui, sans-serif" font-size="17" fill="#e6edf3" font-weight="600">docs: Update installation guide for Flatpak</text>
-  <text x="150" y="510" font-family="system-ui, sans-serif" font-size="14" fill="#8b949e">openza/gitdesk #40 opened by contributor</text>
+  <text x="150" y="510" font-family="system-ui, sans-serif" font-size="14" fill="#8b949e">openza/flow #40 opened by contributor</text>
   <rect x="150" y="525" width="100" height="22" rx="11" fill="#1f6feb" fill-opacity="0.2"/>
   <text x="200" y="540" font-family="system-ui, sans-serif" font-size="12" fill="#58a6ff" text-anchor="middle">documentation</text>
   <text x="1050" y="505" font-family="system-ui, sans-serif" font-size="14" fill="#8b949e" text-anchor="end">1 day ago</text>

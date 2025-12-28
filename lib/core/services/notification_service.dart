@@ -50,7 +50,7 @@ class NotificationService {
     if (!_initialized) await initialize();
 
     final notification = LocalNotification(
-      identifier: identifier ?? 'gitdesk_${DateTime.now().millisecondsSinceEpoch}',
+      identifier: identifier ?? 'flow_${DateTime.now().millisecondsSinceEpoch}',
       title: title,
       body: body,
     );

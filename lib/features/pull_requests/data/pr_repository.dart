@@ -367,7 +367,7 @@ class PrRepository {
     String? afterCursor,
   }) async {
     // Add type:pr if not present, though user might want to search issues too? 
-    // For this app (GitDesk) it's PR focused.
+    // For this app (Openza Flow) it's PR focused.
     final fullQuery = query.contains('type:pr') ? query : '$query type:pr';
     return _searchPullRequests(fullQuery, afterCursor: afterCursor);
   }

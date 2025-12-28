@@ -1,13 +1,13 @@
 #!/bin/bash
 set -e
 
-# GitDesk Flatpak Build Script
+# Openza Flow Flatpak Build Script
 # This script builds a Flatpak bundle from the Flutter Linux build
 
-APP_ID="com.openza.gitdesk"
+APP_ID="com.openza.flow"
 VERSION=$(grep 'version:' pubspec.yaml | head -1 | sed 's/version: //' | sed 's/+.*//')
 
-echo "Building Flatpak for GitDesk v$VERSION..."
+echo "Building Flatpak for Openza Flow v$VERSION..."
 
 # Ensure Flutter build exists
 if [ ! -d "build/linux/x64/release/bundle" ]; then
@@ -17,23 +17,23 @@ fi
 
 # Create flatpak desktop file with correct icon path
 mkdir -p flatpak/build
-cat > flatpak/build/com.openza.gitdesk.desktop << EOF
+cat > flatpak/build/com.openza.flow.desktop << EOF
 [Desktop Entry]
-Name=GitDesk
+Name=Openza Flow
 Comment=GitHub PR Review Inbox
-Exec=gitdesk
-Icon=com.openza.gitdesk
+Exec=flow
+Icon=com.openza.flow
 Type=Application
 Categories=Development;
 Terminal=false
-StartupWMClass=gitdesk
+StartupWMClass=flow
 EOF
 
 # Build the flatpak
 cd flatpak
-flatpak-builder --force-clean --repo=repo build-dir com.openza.gitdesk.yml
+flatpak-builder --force-clean --repo=repo build-dir com.openza.flow.yml
 
 # Create bundle
-flatpak build-bundle repo "../GitDesk-$VERSION.flatpak" "$APP_ID"
+flatpak build-bundle repo "../Flow-$VERSION.flatpak" "$APP_ID"
 
-echo "Flatpak bundle created: GitDesk-$VERSION.flatpak"
+echo "Flatpak bundle created: Flow-$VERSION.flatpak"

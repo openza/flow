@@ -1,4 +1,4 @@
-# GitDesk
+# Openza Flow
 
 A GitHub PR review inbox for your desktop. Stay on top of pull requests that need your attention.
 
@@ -14,17 +14,17 @@ A GitHub PR review inbox for your desktop. Stay on top of pull requests that nee
 
 ### Linux
 
-Download the latest `.AppImage` from [Releases](https://github.com/openza/gitdesk/releases).
+Download the latest `.AppImage` from [Releases](https://github.com/openza/flow/releases).
 
 ```bash
 # Make executable and run
-chmod +x GitDesk-*.AppImage
-./GitDesk-*.AppImage
+chmod +x Flow-*.AppImage
+./Flow-*.AppImage
 ```
 
 ## Setup
 
-1. Launch GitDesk
+1. Launch Openza Flow
 2. Enter your GitHub Personal Access Token (PAT)
    - Create one at [GitHub Settings > Developer settings > Personal access tokens](https://github.com/settings/tokens)
    - Required scopes: `repo`, `read:user`
@@ -40,8 +40,8 @@ chmod +x GitDesk-*.AppImage
 ### Build
 
 ```bash
-git clone https://github.com/openza/gitdesk.git
-cd gitdesk
+git clone https://github.com/openza/flow.git
+cd flow
 
 # Install dependencies
 flutter pub get

@@ -1,29 +1,29 @@
 ---
 title: Installation
-description: How to install Openza GitDesk on your Linux system
+description: How to install Openza Flow on your Linux system
 ---
 
 import { Tabs, TabItem, Steps } from '@astrojs/starlight/components';
 
 # Installation
 
-Openza GitDesk is available as an AppImage and Flatpak for Linux systems.
+Openza Flow is available as an AppImage and Flatpak for Linux systems.
 
 ## Download
 
 <Tabs>
   <TabItem label="AppImage">
-    Download the latest AppImage from the [GitHub Releases](https://github.com/openza/gitdesk/releases/latest) page.
+    Download the latest AppImage from the [GitHub Releases](https://github.com/openza/flow/releases/latest) page.
 
     <Steps>
     1. Download the `.AppImage` file
     2. Make it executable:
        ```bash
-       chmod +x GitDesk-*.AppImage
+       chmod +x Flow-*.AppImage
        ```
     3. Run the application:
        ```bash
-       ./GitDesk-*.AppImage
+       ./Flow-*.AppImage
        ```
     </Steps>
 
@@ -33,7 +33,7 @@ Openza GitDesk is available as an AppImage and Flatpak for Linux systems.
   </TabItem>
 
   <TabItem label="Flatpak">
-    Download the Flatpak bundle from [GitHub Releases](https://github.com/openza/gitdesk/releases/latest).
+    Download the Flatpak bundle from [GitHub Releases](https://github.com/openza/flow/releases/latest).
 
     <Steps>
     1. Install Flatpak if not already installed:
@@ -44,13 +44,13 @@ Openza GitDesk is available as an AppImage and Flatpak for Linux systems.
        # Fedora
        sudo dnf install flatpak
        ```
-    2. Install GitDesk:
+    2. Install Openza Flow:
        ```bash
-       flatpak install GitDesk-*.flatpak
+       flatpak install Flow-*.flatpak
        ```
     3. Run the application:
        ```bash
-       flatpak run com.openza.gitdesk
+       flatpak run com.openza.flow
        ```
     </Steps>
   </TabItem>
@@ -58,8 +58,8 @@ Openza GitDesk is available as an AppImage and Flatpak for Linux systems.
 
 ## Build from Source
 
-If you prefer to build from source, see the [Building from Source](/gitdesk/development/building) guide.
+If you prefer to build from source, see the [Building from Source](/flow/development/building) guide.
 
 ## Next Steps
 
-After installation, proceed to [Authentication](/gitdesk/getting-started/github-token) to connect your GitHub account.
+After installation, proceed to [Authentication](/flow/getting-started/github-token) to connect your GitHub account.

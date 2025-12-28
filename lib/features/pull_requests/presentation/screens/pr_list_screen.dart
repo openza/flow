@@ -125,7 +125,7 @@ class _PrListScreenState extends ConsumerState<PrListScreen>
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  'GitDesk',
+                  'Openza Flow',
                   style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: theme.textTheme.bodyLarge?.color,

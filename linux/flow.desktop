@@ -1,9 +1,9 @@
 [Desktop Entry]
-Name=GitDesk
+Name=Openza Flow
 Comment=GitHub PR Review Inbox
-Exec=gitdesk
-Icon=gitdesk
+Exec=flow
+Icon=flow
 Type=Application
 Categories=Development;
 Terminal=false
-StartupWMClass=gitdesk
+StartupWMClass=flow
