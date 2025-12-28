@@ -291,7 +291,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
 
         // Footer info
         Text(
-          'GitDesk needs access to your GitHub account to display your pull requests.',
+          'Openza Flow needs access to your GitHub account to display your pull requests.',
           style: theme.textTheme.bodySmall?.copyWith(
             color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.6),
           ),

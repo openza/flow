@@ -1,10 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:graphql/client.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:gitdesk/core/services/graphql_service.dart';
-import 'package:gitdesk/core/services/local_storage_service.dart';
-import 'package:gitdesk/features/auth/data/token_repository.dart';
-import 'package:gitdesk/features/pull_requests/data/pr_repository.dart';
+import 'package:flow/core/services/graphql_service.dart';
+import 'package:flow/core/services/local_storage_service.dart';
+import 'package:flow/features/auth/data/token_repository.dart';
+import 'package:flow/features/pull_requests/data/pr_repository.dart';
 
 class MockGraphQLService extends Mock implements GraphQLService {}
 class MockTokenRepository extends Mock implements TokenRepository {}

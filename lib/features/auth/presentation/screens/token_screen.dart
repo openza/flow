@@ -47,7 +47,7 @@ class _TokenScreenState extends ConsumerState<TokenScreen> {
 
   Future<void> _openTokenCreationPage() async {
     final uri = Uri.parse(
-      'https://github.com/settings/tokens/new?description=GitDesk&scopes=repo,read:user',
+      'https://github.com/settings/tokens/new?description=Openza%20Flow&scopes=repo,read:user',
     );
     // Use platformDefault - works better with Flatpak portals
     await launchUrl(uri, mode: LaunchMode.platformDefault);

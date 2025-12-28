@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <component type="desktop-application">
-  <id>com.openza.gitdesk</id>
-  <name>GitDesk</name>
+  <id>com.openza.flow</id>
+  <name>Openza Flow</name>
   <summary>GitHub PR review inbox for your desktop</summary>
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>MIT</project_license>
@@ -10,7 +10,7 @@
   </developer>
   <description>
     <p>
-      GitDesk is a desktop application that helps you stay on top of your GitHub
+      Openza Flow is a desktop application that helps you stay on top of your GitHub
       pull request reviews. See all PRs waiting for your review in one place.
     </p>
     <p>Features:</p>
@@ -25,9 +25,9 @@
       <li>Secure GitHub OAuth authentication</li>
     </ul>
   </description>
-  <launchable type="desktop-id">com.openza.gitdesk.desktop</launchable>
-  <url type="homepage">https://github.com/openza/gitdesk</url>
-  <url type="bugtracker">https://github.com/openza/gitdesk/issues</url>
+  <launchable type="desktop-id">com.openza.flow.desktop</launchable>
+  <url type="homepage">https://github.com/openza/flow</url>
+  <url type="bugtracker">https://github.com/openza/flow/issues</url>
   <content_rating type="oars-1.1" />
   <categories>
     <category>Development</category>

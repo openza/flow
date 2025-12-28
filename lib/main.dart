@@ -16,7 +16,7 @@ void main() async {
       overrides: [
         notificationServiceProvider.overrideWithValue(notificationService),
       ],
-      child: const GitDeskApp(),
+      child: const FlowApp(),
     ),
   );
 }

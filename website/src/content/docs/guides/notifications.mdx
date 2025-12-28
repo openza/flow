@@ -1,23 +1,23 @@
 ---
 title: Notifications
-description: Desktop notifications in GitDesk
+description: Desktop notifications in Openza Flow
 ---
 
 import { Aside } from '@astrojs/starlight/components';
 
 # Desktop Notifications
 
-GitDesk sends desktop notifications to alert you when new pull requests need your review.
+Openza Flow sends desktop notifications to alert you when new pull requests need your review.
 
 ## How It Works
 
-When GitDesk detects new PR review requests during a refresh, it will send a desktop notification:
+When Openza Flow detects new PR review requests during a refresh, it will send a desktop notification:
 
 - **Single PR**: Shows the PR title and repository name
 - **Multiple PRs**: Shows the count of new PRs awaiting your review
 
 <Aside type="note">
-  GitDesk uses your system's native notification system (libnotify on Linux).
+  Openza Flow uses your system's native notification system (libnotify on Linux).
 </Aside>
 
 ## Notification Behavior
@@ -31,7 +31,7 @@ When GitDesk detects new PR review requests during a refresh, it will send a des
 ### Notifications Not Showing
 
 1. Check that system notifications are enabled in your desktop environment
-2. Verify GitDesk has notification permissions
+2. Verify Openza Flow has notification permissions
 3. Check that "Do Not Disturb" mode is off
 
 ### On Flatpak
@@ -39,7 +39,7 @@ When GitDesk detects new PR review requests during a refresh, it will send a des
 Flatpak apps need notification portal access:
 
 ```bash
-flatpak permission-show com.openza.gitdesk
+flatpak permission-show com.openza.flow
 ```
 
 Ensure `notifications` is listed as `yes`.

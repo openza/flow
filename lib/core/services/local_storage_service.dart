@@ -9,7 +9,7 @@ final localStorageServiceProvider = Provider<LocalStorageService>((ref) {
 });
 
 class LocalStorageService {
-  static const String _boxName = 'gitdesk_cache';
+  static const String _boxName = 'flow_cache';
   static const String _prCacheKey = 'pr_cache';
   
   bool _initialized = false;

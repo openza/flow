@@ -1,12 +1,12 @@
 #!/bin/bash
 set -e
 
-# GitDesk AppImage Build Script
+# Openza Flow AppImage Build Script
 # This script packages the Flutter Linux build into an AppImage
 
-APP_NAME="GitDesk"
-APP_ID="com.openza.gitdesk"
-BINARY_NAME="gitdesk"
+APP_NAME="Flow"
+APP_ID="com.openza.flow"
+BINARY_NAME="flow"
 VERSION=$(grep 'version:' pubspec.yaml | head -1 | sed 's/version: //' | sed 's/+.*//')
 
 echo "Building AppImage for $APP_NAME v$VERSION..."
@@ -22,8 +22,8 @@ mkdir -p "$APPDIR/usr/share/icons/hicolor/256x256/apps"
 cp -r build/linux/x64/release/bundle/* "$APPDIR/usr/bin/"
 
 # Copy desktop file
-cp linux/gitdesk.desktop "$APPDIR/usr/share/applications/$APP_ID.desktop"
-cp linux/gitdesk.desktop "$APPDIR/$BINARY_NAME.desktop"
+cp linux/flow.desktop "$APPDIR/usr/share/applications/$APP_ID.desktop"
+cp linux/flow.desktop "$APPDIR/$BINARY_NAME.desktop"
 
 # Copy icon
 cp assets/icon/icon.png "$APPDIR/usr/share/icons/hicolor/256x256/apps/$BINARY_NAME.png"
@@ -37,7 +37,7 @@ HERE=${SELF%/*}
 export PATH="${HERE}/usr/bin:${PATH}"
 export LD_LIBRARY_PATH="${HERE}/usr/bin/lib:${LD_LIBRARY_PATH}"
 cd "${HERE}/usr/bin"
-exec "${HERE}/usr/bin/gitdesk" "$@"
+exec "${HERE}/usr/bin/flow" "$@"
 EOF
 chmod +x "$APPDIR/AppRun"
 

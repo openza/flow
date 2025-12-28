@@ -1,7 +1,7 @@
 class AppConstants {
   AppConstants._();
 
-  static const String appName = 'GitDesk';
+  static const String appName = 'Openza Flow';
   static const String appVersion = '0.2.0';
 
   // Storage keys

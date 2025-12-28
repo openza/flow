@@ -8,8 +8,8 @@ import 'features/auth/presentation/providers/auth_provider.dart';
 import 'features/auth/presentation/screens/auth_screen.dart';
 import 'features/pull_requests/presentation/screens/pr_list_screen.dart';
 
-class GitDeskApp extends ConsumerWidget {
-  const GitDeskApp({super.key});
+class FlowApp extends ConsumerWidget {
+  const FlowApp({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

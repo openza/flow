@@ -3,16 +3,16 @@ import starlight from '@astrojs/starlight';
 
 export default defineConfig({
   site: 'https://openza.github.io',
-  base: '/gitdesk',
+  base: '/flow',
   integrations: [
     starlight({
-      title: 'Openza GitDesk',
-      description: 'Documentation for Openza GitDesk - GitHub PR Review Inbox for Linux',
+      title: 'Openza Flow',
+      description: 'Documentation for Openza Flow - GitHub PR Review Inbox for Linux',
       logo: {
         src: './src/assets/logo.svg',
       },
       social: {
-        github: 'https://github.com/openza/gitdesk',
+        github: 'https://github.com/openza/flow',
       },
       customCss: [
         './src/styles/custom.css',
