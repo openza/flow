@@ -25,4 +25,4 @@ target_link_libraries(${BINARY_NAME} PRIVATE PkgConfig::GTK)
 
 target_include_directories(${BINARY_NAME} PRIVATE "${CMAKE_SOURCE_DIR}")
 
-# Note: App icon is included via assets/icon/ in pubspec.yaml
+# App icon install rule is in parent CMakeLists.txt
