@@ -59,11 +59,12 @@ If you prefer, you can use a Personal Access Token instead.
 
 Your credentials are stored securely using your system's secret storage:
 
-| System | Storage |
-|--------|---------|
+| Platform | Storage |
+|----------|---------|
+| Windows | Windows Credential Manager |
 | GNOME | GNOME Keyring |
 | KDE | KWallet |
-| Other | Secret Service API |
+| Other Linux | Secret Service API |
 
 ## Organization Filter
 
@@ -93,6 +94,7 @@ After signing in, you can filter PRs by organization:
 ### Token Not Saving
 
 - Ensure your system's secret storage service is running
+- On Windows, check that Credential Manager is accessible
 - On GNOME, check that `gnome-keyring` is installed
 - On KDE, check that `kwallet` is running
 

@@ -15,9 +15,13 @@ Openza Flow is built with Flutter and can be compiled for Linux, macOS, and Wind
 - Dart SDK 3.0.0 or later
 - Git
 
-### Linux Dependencies
+### Platform Dependencies
 
 <Tabs>
+  <TabItem label="Windows">
+    - Visual Studio 2022 with "Desktop development with C++" workload
+    - Windows 10 SDK
+  </TabItem>
   <TabItem label="Ubuntu/Debian">
     ```bash
     sudo apt install clang cmake ninja-build pkg-config \
@@ -52,20 +56,38 @@ Openza Flow is built with Flutter and can be compiled for Linux, macOS, and Wind
    ```
 
 3. **Build the application**
-   ```bash
-   flutter build linux --release
-   ```
+
+   <Tabs>
+     <TabItem label="Windows">
+       ```bash
+       flutter build windows --release
+       ```
+       The built application will be in `build/windows/x64/runner/Release/`.
+     </TabItem>
+     <TabItem label="Linux">
+       ```bash
+       flutter build linux --release
+       ```
+       The built application will be in `build/linux/x64/release/bundle/`.
+     </TabItem>
+   </Tabs>
 </Steps>
 
-The built application will be in `build/linux/x64/release/bundle/`.
+## Creating Installers
 
-## Creating an AppImage
+### Windows Installer
+
+```bash
+dart run inno_bundle --release
+```
+
+### Linux AppImage
 
 ```bash
 ./scripts/build-appimage.sh
 ```
 
-## Creating a Flatpak
+### Linux Flatpak
 
 ```bash
 ./scripts/build-flatpak.sh
@@ -75,6 +97,15 @@ The built application will be in `build/linux/x64/release/bundle/`.
 
 For development with hot reload:
 
-```bash
-flutter run -d linux
-```
+<Tabs>
+  <TabItem label="Windows">
+    ```bash
+    flutter run -d windows
+    ```
+  </TabItem>
+  <TabItem label="Linux">
+    ```bash
+    flutter run -d linux
+    ```
+  </TabItem>
+</Tabs>
