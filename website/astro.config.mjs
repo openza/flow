@@ -10,6 +10,7 @@ export default defineConfig({
     starlight({
       title: 'Openza Flow',
       description: 'Documentation for Openza Flow - GitHub PR Review Inbox for Windows and Linux',
+      favicon: '/favicon.png',
       logo: {
         src: './src/assets/logo.svg',
       },

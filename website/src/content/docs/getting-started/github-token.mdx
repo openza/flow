@@ -5,8 +5,6 @@ description: How to authenticate Openza Flow with your GitHub account
 
 import { Steps, Aside, Tabs, TabItem } from '@astrojs/starlight/components';
 
-# Authentication
-
 Openza Flow needs access to your GitHub account to fetch your pull requests. You can authenticate using GitHub OAuth (recommended) or a Personal Access Token.
 
 ## Sign in with GitHub (Recommended)
@@ -59,11 +57,12 @@ If you prefer, you can use a Personal Access Token instead.
 
 Your credentials are stored securely using your system's secret storage:
 
-| System | Storage |
-|--------|---------|
+| Platform | Storage |
+|----------|---------|
+| Windows | Windows Credential Manager |
 | GNOME | GNOME Keyring |
 | KDE | KWallet |
-| Other | Secret Service API |
+| Other Linux | Secret Service API |
 
 ## Organization Filter
 
@@ -93,6 +92,7 @@ After signing in, you can filter PRs by organization:
 ### Token Not Saving
 
 - Ensure your system's secret storage service is running
+- On Windows, check that Credential Manager is accessible
 - On GNOME, check that `gnome-keyring` is installed
 - On KDE, check that `kwallet` is running
 
