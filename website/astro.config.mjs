@@ -10,6 +10,7 @@ export default defineConfig({
     starlight({
       title: 'Openza Flow',
       description: 'Documentation for Openza Flow - native GitHub pull request dashboard for Windows',
+      favicon: '/favicon.png',
       logo: {
         src: './src/assets/logo.svg',
       },
