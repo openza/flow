@@ -1,105 +1,49 @@
 ---
-title: Authentication
+title: GitHub Sign-in
 description: How to authenticate Openza Flow with your GitHub account
 ---
 
-import { Steps, Aside, Tabs, TabItem } from '@astrojs/starlight/components';
+import { Steps, Aside } from '@astrojs/starlight/components';
 
-# Authentication
+# GitHub Sign-in
 
-Openza Flow needs access to your GitHub account to fetch your pull requests. You can authenticate using GitHub OAuth (recommended) or a Personal Access Token.
+Openza Flow needs a GitHub credential to read pull request metadata for your account. You can use GitHub OAuth device flow or a Personal Access Token.
 
-## Sign in with GitHub (Recommended)
+## Sign in with GitHub
 
-The easiest way to connect is using GitHub's secure OAuth device flow.
+This is the recommended path.
 
 <Steps>
-1. Launch Openza Flow and click **"Sign in with GitHub"**
-
-2. A browser window opens to GitHub's device activation page
-
-3. Enter the code shown in Openza Flow
-
-4. Click **"Authorize"** to grant Openza Flow access
-
-5. Return to Openza Flow - you're now signed in!
+1. Launch Openza Flow.
+2. Select **Sign in with GitHub**.
+3. Open the GitHub device activation page when prompted.
+4. Enter the code shown in Openza Flow.
+5. Authorize the app and return to Flow.
 </Steps>
 
 <Aside type="tip">
-  OAuth tokens are automatically managed and stored securely. No need to create or manage tokens manually.
+  The OAuth client ID is public app metadata, not a secret. The access token is stored locally in Windows Credential Locker.
 </Aside>
 
-## Personal Access Token (Alternative)
+## Personal Access Token
 
-If you prefer, you can use a Personal Access Token instead.
+Use this fallback if OAuth is not suitable for your environment.
 
 <Steps>
-1. Click **"Use personal access token"** on the sign-in screen
-
-2. Go to [GitHub Settings > Developer settings > Personal access tokens](https://github.com/settings/tokens)
-
-3. Click **"Generate new token (classic)"**
-
-4. Give your token a descriptive name (e.g., "Openza Flow Desktop")
-
-5. Select the required scopes:
-   - `repo` - Full control of private repositories
-   - `read:user` - Read your profile information
-
-6. Click **"Generate token"** and copy it
-
-7. Paste the token in Openza Flow and click **"Connect"**
+1. Select **Use personal access token**.
+2. Create a token from GitHub Developer settings.
+3. Grant access needed for the repositories you want Flow to show.
+4. Paste the token into Openza Flow and connect.
 </Steps>
 
 <Aside type="caution">
-  Keep your token secure! Never share it or commit it to version control.
+  Treat PATs like passwords. Do not share them and do not commit them to source control.
 </Aside>
 
-## Token Storage
+## Storage
 
-Your credentials are stored securely using your system's secret storage:
-
-| System | Storage |
-|--------|---------|
-| GNOME | GNOME Keyring |
-| KDE | KWallet |
-| Other | Secret Service API |
-
-## Organization Filter
-
-After signing in, you can filter PRs by organization:
-
-1. Click the organization dropdown in the header
-2. Select a specific organization or "All Organizations"
-3. PR lists will update to show only PRs from that organization
-
-<Aside type="note">
-  The organization filter is remembered across sessions.
-</Aside>
-
-## Troubleshooting
-
-### OAuth Flow Not Opening Browser
-
-- Ensure you have a default browser configured
-- Try clicking "Open GitHub" manually if the browser doesn't open automatically
-
-### "Bad Credentials" Error (PAT)
-
-- Ensure you copied the entire token
-- Check that the token hasn't expired
-- Verify the token has the required scopes
-
-### Token Not Saving
-
-- Ensure your system's secret storage service is running
-- On GNOME, check that `gnome-keyring` is installed
-- On KDE, check that `kwallet` is running
+Tokens are stored in Windows Credential Locker. Openza Flow does not sync credentials to Openza servers and does not migrate credentials from the legacy Flutter app.
 
 ## Sign Out
 
-To sign out or switch accounts:
-
-1. Click the settings/menu icon
-2. Select **"Sign Out"**
-3. You'll return to the authentication screen
+Open Settings in Flow and select **Sign out**. This removes the stored token from Windows Credential Locker and returns the app to the sign-in screen.

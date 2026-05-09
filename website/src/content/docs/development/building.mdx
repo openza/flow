@@ -3,78 +3,57 @@ title: Building from Source
 description: How to build Openza Flow from source
 ---
 
-import { Steps, Tabs, TabItem } from '@astrojs/starlight/components';
+import { Steps, Aside } from '@astrojs/starlight/components';
 
 # Building from Source
 
-Openza Flow is built with Flutter and can be compiled for Linux, macOS, and Windows.
+Openza Flow is a Windows-native WinUI 3 app.
 
 ## Prerequisites
 
-- Flutter SDK 3.10.3 or later
-- Dart SDK 3.0.0 or later
-- Git
-
-### Linux Dependencies
-
-<Tabs>
-  <TabItem label="Ubuntu/Debian">
-    ```bash
-    sudo apt install clang cmake ninja-build pkg-config \
-      libgtk-3-dev libsecret-1-dev libjsoncpp-dev libnotify-dev
-    ```
-  </TabItem>
-  <TabItem label="Fedora">
-    ```bash
-    sudo dnf install clang cmake ninja-build \
-      gtk3-devel libsecret-devel jsoncpp-devel libnotify-devel
-    ```
-  </TabItem>
-  <TabItem label="Arch">
-    ```bash
-    sudo pacman -S clang cmake ninja gtk3 libsecret jsoncpp libnotify
-    ```
-  </TabItem>
-</Tabs>
+- Windows 10 22H2 or Windows 11
+- .NET 10 SDK
+- Visual Studio 2026 Community or newer with the Windows App SDK / WinUI workload
+- Windows SDK 10.0.26100 or newer
+- PowerShell 7+
 
 ## Build Steps
 
 <Steps>
-1. **Clone the repository**
-   ```bash
+1. Clone the repository.
+
+   ```powershell
    git clone https://github.com/openza/flow.git
    cd flow
    ```
 
-2. **Install dependencies**
-   ```bash
-   flutter pub get
+2. Restore and run tests.
+
+   ```powershell
+   dotnet restore src\Openza.Flow.Tests\Openza.Flow.Tests.csproj
+   dotnet test src\Openza.Flow.Tests\Openza.Flow.Tests.csproj -c Release --no-restore
    ```
 
-3. **Build the application**
-   ```bash
-   flutter build linux --release
+3. Restore and build the app.
+
+   ```powershell
+   dotnet restore src\Openza.Flow\Openza.Flow.csproj
+   dotnet build src\Openza.Flow\Openza.Flow.csproj -c Release --no-restore
    ```
 </Steps>
 
-The built application will be in `build/linux/x64/release/bundle/`.
+## Debugging
 
-## Creating an AppImage
+Use Visual Studio for packaged debugging:
 
-```bash
-./scripts/build-appimage.sh
-```
+- Set `Openza.Flow` as the startup project.
+- Choose the `Package` profile.
+- Enable Deploy for `Openza.Flow` in Configuration Manager.
 
-## Creating a Flatpak
+<Aside type="note">
+  Command-line `dotnet run` can build a WinUI app but packaged features such as app identity, startup tasks, and toast activation need packaged debugging or an installed MSIX.
+</Aside>
 
-```bash
-./scripts/build-flatpak.sh
-```
+## Store Package
 
-## Development Mode
-
-For development with hot reload:
-
-```bash
-flutter run -d linux
-```
+Use Visual Studio's Create App Packages flow after associating the project with the Microsoft Store app name. The repository intentionally ignores generated certificates, MSIX packages, and upload artifacts.

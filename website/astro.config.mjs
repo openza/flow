@@ -9,7 +9,7 @@ export default defineConfig({
     sitemap(),
     starlight({
       title: 'Openza Flow',
-      description: 'Documentation for Openza Flow - GitHub PR Review Inbox for Windows and Linux',
+      description: 'Documentation for Openza Flow - native GitHub pull request dashboard for Windows',
       logo: {
         src: './src/assets/logo.svg',
       },
@@ -25,7 +25,7 @@ export default defineConfig({
           items: [
             { label: 'Introduction', slug: 'getting-started/introduction' },
             { label: 'Installation', slug: 'getting-started/installation' },
-            { label: 'GitHub Token Setup', slug: 'getting-started/github-token' },
+            { label: 'GitHub Sign-in', slug: 'getting-started/github-token' },
           ],
         },
         {

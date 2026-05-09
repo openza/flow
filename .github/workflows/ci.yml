@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  dotnet:
+    name: Build and test
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Restore tests
+        run: dotnet restore src\Openza.Flow.Tests\Openza.Flow.Tests.csproj
+
+      - name: Test
+        run: dotnet test src\Openza.Flow.Tests\Openza.Flow.Tests.csproj -c Release --no-restore
+
+      - name: Restore app
+        run: dotnet restore src\Openza.Flow\Openza.Flow.csproj
+
+      - name: Build app
+        run: dotnet build src\Openza.Flow\Openza.Flow.csproj -c Release --no-restore

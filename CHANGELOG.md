@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-05-09
+
+### Changed
+- Rebuilt Openza Flow as a Windows-native WinUI 3 app.
+- Preserved the Flutter implementation as legacy history instead of maintaining it side by side.
+- Updated documentation, CI, and open-source project files for the Windows-native app.
+
+### Added
+- GitHub OAuth device-flow sign-in and PAT fallback in the WinUI app.
+- Review requests, created pull requests, recently reviewed, recently created, search, organization filter, pagination, and refresh.
+- Windows Credential Locker token storage.
+- Local JSON cache for first-page/default dashboard data.
+- Optional background mode with tray icon and Windows toast notifications.
+- Optional packaged startup task support.
+
 ## [0.2.0] - 2025-12-25
 
 ### Added
