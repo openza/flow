@@ -344,11 +344,15 @@ public sealed partial class MainWindow : Window
                 var cachedReviewed = await _cacheStore.GetAsync<List<ReviewedPullRequest>>(FlowCacheKeys.ReviewedPullRequests);
                 if (cachedReviewed is { Count: > 0 })
                 {
-                    ReplaceList(_reviewedPullRequests, cachedReviewed.Select(pr => new PrListItem(pr)));
+                    var sortedCached = cachedReviewed.OrderByDescending(pr => pr.ReviewedAt).ToList();
+                    ReplaceList(_reviewedPullRequests, sortedCached.Select(pr => new PrListItem(pr)));
                 }
             }
 
-            var reviewed = (await _pullRequestService.GetReviewedPullRequestsAsync(organization: organization)).Items.ToList();
+            var reviewedResult = await _pullRequestService.GetReviewedPullRequestsAsync(organization: organization);
+            var reviewed = reviewedResult.Items
+                .OrderByDescending(pr => pr.ReviewedAt)
+                .ToList();
             ReplaceList(_reviewedPullRequests, reviewed.Select(pr => new PrListItem(pr)));
             if (organization is null)
             {
@@ -365,10 +369,14 @@ public sealed partial class MainWindow : Window
             var cachedCreated = await _cacheStore.GetAsync<List<CreatedPullRequest>>(FlowCacheKeys.RecentlyCreatedPullRequests);
             if (cachedCreated is { Count: > 0 })
             {
-                ReplaceList(_recentlyCreatedPullRequests, cachedCreated.Select(pr => new PrListItem(pr)));
+                var sortedCached = cachedCreated.OrderByDescending(pr => pr.CreatedAt).ToList();
+                ReplaceList(_recentlyCreatedPullRequests, sortedCached.Select(pr => new PrListItem(pr)));
             }
 
-            var created = (await _pullRequestService.GetRecentlyCreatedPullRequestsAsync()).ToList();
+            var createdResult = await _pullRequestService.GetRecentlyCreatedPullRequestsAsync();
+            var created = createdResult
+                .OrderByDescending(pr => pr.CreatedAt)
+                .ToList();
             ReplaceList(_recentlyCreatedPullRequests, created.Select(pr => new PrListItem(pr)));
             await _cacheStore.SetAsync(FlowCacheKeys.RecentlyCreatedPullRequests, created);
         }
