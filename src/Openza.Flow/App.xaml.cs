@@ -43,10 +43,7 @@ public partial class App : Application
             _ = DispatcherQueue.TryEnqueue(() =>
             {
                 _window?.ShowWindow();
-                if (!string.IsNullOrWhiteSpace(url))
-                {
-                    _ = Windows.System.Launcher.LaunchUriAsync(new Uri(url));
-                }
+                LaunchNotificationUrl(url);
             });
         };
         _notifications.Initialize();
@@ -79,7 +76,7 @@ public partial class App : Application
             _ = DispatcherQueue.TryEnqueue(() =>
             {
                 _window.ShowWindow();
-                _ = Windows.System.Launcher.LaunchUriAsync(new Uri(launchNotificationUrl));
+                LaunchNotificationUrl(launchNotificationUrl);
             });
         }
 
@@ -87,6 +84,14 @@ public partial class App : Application
         {
             _tray.SetVisible(true);
             _backgroundRefresh.Start();
+        }
+    }
+
+    private static void LaunchNotificationUrl(string? url)
+    {
+        if (NotificationLaunchUrlValidator.TryCreateGitHubUrl(url, out var uri))
+        {
+            _ = Windows.System.Launcher.LaunchUriAsync(uri);
         }
     }
 }
