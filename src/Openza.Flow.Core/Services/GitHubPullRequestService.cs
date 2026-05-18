@@ -54,12 +54,14 @@ public sealed class GitHubPullRequestService
         return GitHubResponseMapper.MapReviewedPullRequestSearch(data.GetProperty("search"), username);
     }
 
-    public async Task<IReadOnlyList<CreatedPullRequest>> GetRecentlyCreatedPullRequestsAsync(CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<CreatedPullRequest>> GetRecentlyCreatedPullRequestsAsync(
+        string? organization = null,
+        CancellationToken cancellationToken = default)
     {
         var username = await GetRequiredUsernameAsync(cancellationToken);
         var data = await SendGraphQlAsync(
             RecentlyCreatedPullRequestsQuery,
-            new Dictionary<string, object?> { ["query"] = GitHubQueryBuilder.RecentlyCreatedPullRequests(username) },
+            new Dictionary<string, object?> { ["query"] = GitHubQueryBuilder.RecentlyCreatedPullRequests(username, organization) },
             cancellationToken);
 
         return GitHubResponseMapper.MapCreatedPullRequests(data.GetProperty("search"));

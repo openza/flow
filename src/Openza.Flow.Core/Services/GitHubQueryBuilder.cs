@@ -23,9 +23,11 @@ public static class GitHubQueryBuilder
         return $"{query} sort:updated-desc";
     }
 
-    public static string RecentlyCreatedPullRequests(string username)
+    public static string RecentlyCreatedPullRequests(string username, string? organization)
     {
-        return $"type:pr author:{username} sort:created-desc";
+        var query = $"type:pr author:{username}";
+        query = ApplyOrganization(query, organization);
+        return $"{query} sort:created-desc";
     }
 
     public static string SearchPullRequests(string query, string? organization)

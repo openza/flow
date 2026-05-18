@@ -382,19 +382,22 @@ public sealed partial class MainWindow : Window
 
         try
         {
-            var cachedCreated = await _cacheStore.GetAsync<List<CreatedPullRequest>>(FlowCacheKeys.RecentlyCreatedPullRequests, cancellationToken);
-            if (cachedCreated is { Count: > 0 })
+            if (organization is null)
             {
-                var sortedCached = cachedCreated.OrderByDescending(pr => pr.CreatedAt).ToList();
-                if (!IsActivityLoadCurrent(loadGeneration, organization, cancellationToken))
+                var cachedCreated = await _cacheStore.GetAsync<List<CreatedPullRequest>>(FlowCacheKeys.RecentlyCreatedPullRequests, cancellationToken);
+                if (cachedCreated is { Count: > 0 })
                 {
-                    return;
-                }
+                    var sortedCached = cachedCreated.OrderByDescending(pr => pr.CreatedAt).ToList();
+                    if (!IsActivityLoadCurrent(loadGeneration, organization, cancellationToken))
+                    {
+                        return;
+                    }
 
-                ReplaceList(_recentlyCreatedPullRequests, sortedCached.Select(pr => new PrListItem(pr)));
+                    ReplaceList(_recentlyCreatedPullRequests, sortedCached.Select(pr => new PrListItem(pr)));
+                }
             }
 
-            var createdResult = await _pullRequestService.GetRecentlyCreatedPullRequestsAsync(cancellationToken);
+            var createdResult = await _pullRequestService.GetRecentlyCreatedPullRequestsAsync(organization, cancellationToken);
             var created = createdResult
                 .OrderByDescending(pr => pr.CreatedAt)
                 .ToList();
@@ -404,7 +407,10 @@ public sealed partial class MainWindow : Window
             }
 
             ReplaceList(_recentlyCreatedPullRequests, created.Select(pr => new PrListItem(pr)));
-            await _cacheStore.SetAsync(FlowCacheKeys.RecentlyCreatedPullRequests, created, cancellationToken);
+            if (organization is null)
+            {
+                await _cacheStore.SetAsync(FlowCacheKeys.RecentlyCreatedPullRequests, created, cancellationToken);
+            }
         }
         catch (OperationCanceledException)
         {
@@ -665,30 +671,15 @@ public sealed partial class MainWindow : Window
         await LoadMoreAsync();
     }
 
-    private async void OnOpenItemClicked(object sender, RoutedEventArgs e)
+    private async void OnPrOpenRequested(object? sender, PrListItem item)
     {
-        if (sender is FrameworkElement { DataContext: PrListItem item })
-        {
-            await OpenPullRequestAsync(item);
-        }
+        await OpenPullRequestAsync(item);
     }
 
-    private async void OnOpenItemDoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
+    private void OnPrNumberCopyRequested(object? sender, PrListItem item)
     {
-        if (sender is FrameworkElement { DataContext: PrListItem item })
-        {
-            e.Handled = true;
-            await OpenPullRequestAsync(item);
-        }
-    }
-
-    private void OnCopyPrNumberClicked(object sender, RoutedEventArgs e)
-    {
-        if (sender is FrameworkElement { DataContext: PrListItem item })
-        {
-            CopyText(item.Number.ToString());
-            StatusText.Text = $"Copied {item.DisplayNumber} to clipboard";
-        }
+        CopyText(item.Number.ToString());
+        StatusText.Text = $"Copied {item.DisplayNumber} to clipboard";
     }
 
     private async Task OpenPullRequestAsync(PrListItem item)

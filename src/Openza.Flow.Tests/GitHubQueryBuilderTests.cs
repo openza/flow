@@ -52,4 +52,12 @@ public sealed class GitHubQueryBuilderTests
 
         Assert.Equal("docs type:pr state:open author:octocat", query);
     }
+
+    [Fact]
+    public void RecentlyCreatedPullRequestsIncludesOrganizationAndCreatedSort()
+    {
+        var query = GitHubQueryBuilder.RecentlyCreatedPullRequests("octocat", "openza");
+
+        Assert.Equal("type:pr author:octocat org:openza sort:created-desc", query);
+    }
 }
