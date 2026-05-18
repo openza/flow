@@ -75,6 +75,7 @@ public partial class App : Application
         _window.Activate();
         if (settings.RunInBackground)
         {
+            _tray.SetVisible(true);
             _backgroundRefresh.Start();
         }
     }

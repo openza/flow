@@ -15,7 +15,7 @@ public sealed class TrayIconService : IDisposable
         {
             Icon = File.Exists(resolvedIconPath) ? new Icon(resolvedIconPath) : SystemIcons.Application,
             Text = "Openza Flow",
-            Visible = true,
+            Visible = false,
             ContextMenuStrip = BuildMenu()
         };
         _notifyIcon.DoubleClick += (_, _) => OpenRequested?.Invoke(this, EventArgs.Empty);
@@ -26,6 +26,11 @@ public sealed class TrayIconService : IDisposable
     public event EventHandler? RefreshRequested;
 
     public event EventHandler? ExitRequested;
+
+    public void SetVisible(bool isVisible)
+    {
+        _notifyIcon.Visible = isVisible;
+    }
 
     public void ShowBackgroundHint()
     {

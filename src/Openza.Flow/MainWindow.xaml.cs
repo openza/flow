@@ -115,7 +115,7 @@ public sealed partial class MainWindow : Window
         }
 
         await LoadPrimaryListAsync(useCacheFirst: false);
-        await LoadActivityListsAsync();
+        await LoadActivityListsAsync(_loadGeneration, SelectedOrganization, _loadCts?.Token ?? CancellationToken.None);
     }
 
     private async Task RefreshVisibleDashboardAsync()
@@ -196,7 +196,7 @@ public sealed partial class MainWindow : Window
         await LoadOrganizationsAsync();
         await UpdateUserMenuAsync();
         await LoadPrimaryListAsync(useCacheFirst: true);
-        await LoadActivityListsAsync();
+        await LoadActivityListsAsync(_loadGeneration, SelectedOrganization, _loadCts?.Token ?? CancellationToken.None);
         _autoRefreshTimer.Start();
     }
 
@@ -334,30 +334,43 @@ public sealed partial class MainWindow : Window
         }
     }
 
-    private async Task LoadActivityListsAsync()
+    private async Task LoadActivityListsAsync(int loadGeneration, string? organization, CancellationToken cancellationToken)
     {
-        var organization = SelectedOrganization;
         try
         {
             if (organization is null)
             {
-                var cachedReviewed = await _cacheStore.GetAsync<List<ReviewedPullRequest>>(FlowCacheKeys.ReviewedPullRequests);
+                var cachedReviewed = await _cacheStore.GetAsync<List<ReviewedPullRequest>>(FlowCacheKeys.ReviewedPullRequests, cancellationToken);
                 if (cachedReviewed is { Count: > 0 })
                 {
                     var sortedCached = cachedReviewed.OrderByDescending(pr => pr.ReviewedAt).ToList();
+                    if (!IsActivityLoadCurrent(loadGeneration, organization, cancellationToken))
+                    {
+                        return;
+                    }
+
                     ReplaceList(_reviewedPullRequests, sortedCached.Select(pr => new PrListItem(pr)));
                 }
             }
 
-            var reviewedResult = await _pullRequestService.GetReviewedPullRequestsAsync(organization: organization);
+            var reviewedResult = await _pullRequestService.GetReviewedPullRequestsAsync(organization: organization, cancellationToken: cancellationToken);
             var reviewed = reviewedResult.Items
                 .OrderByDescending(pr => pr.ReviewedAt)
                 .ToList();
+            if (!IsActivityLoadCurrent(loadGeneration, organization, cancellationToken))
+            {
+                return;
+            }
+
             ReplaceList(_reviewedPullRequests, reviewed.Select(pr => new PrListItem(pr)));
             if (organization is null)
             {
-                await _cacheStore.SetAsync(FlowCacheKeys.ReviewedPullRequests, reviewed);
+                await _cacheStore.SetAsync(FlowCacheKeys.ReviewedPullRequests, reviewed, cancellationToken);
             }
+        }
+        catch (OperationCanceledException)
+        {
+            return;
         }
         catch (Exception exception)
         {
@@ -366,24 +379,44 @@ public sealed partial class MainWindow : Window
 
         try
         {
-            var cachedCreated = await _cacheStore.GetAsync<List<CreatedPullRequest>>(FlowCacheKeys.RecentlyCreatedPullRequests);
+            var cachedCreated = await _cacheStore.GetAsync<List<CreatedPullRequest>>(FlowCacheKeys.RecentlyCreatedPullRequests, cancellationToken);
             if (cachedCreated is { Count: > 0 })
             {
                 var sortedCached = cachedCreated.OrderByDescending(pr => pr.CreatedAt).ToList();
+                if (!IsActivityLoadCurrent(loadGeneration, organization, cancellationToken))
+                {
+                    return;
+                }
+
                 ReplaceList(_recentlyCreatedPullRequests, sortedCached.Select(pr => new PrListItem(pr)));
             }
 
-            var createdResult = await _pullRequestService.GetRecentlyCreatedPullRequestsAsync();
+            var createdResult = await _pullRequestService.GetRecentlyCreatedPullRequestsAsync(cancellationToken);
             var created = createdResult
                 .OrderByDescending(pr => pr.CreatedAt)
                 .ToList();
+            if (!IsActivityLoadCurrent(loadGeneration, organization, cancellationToken))
+            {
+                return;
+            }
+
             ReplaceList(_recentlyCreatedPullRequests, created.Select(pr => new PrListItem(pr)));
-            await _cacheStore.SetAsync(FlowCacheKeys.RecentlyCreatedPullRequests, created);
+            await _cacheStore.SetAsync(FlowCacheKeys.RecentlyCreatedPullRequests, created, cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
         }
         catch (Exception exception)
         {
             AppLog.Write(exception);
         }
+    }
+
+    private bool IsActivityLoadCurrent(int loadGeneration, string? organization, CancellationToken cancellationToken)
+    {
+        return !cancellationToken.IsCancellationRequested
+            && loadGeneration == _loadGeneration
+            && organization == SelectedOrganization;
     }
 
     private async Task LoadMoreAsync()
@@ -774,10 +807,12 @@ public sealed partial class MainWindow : Window
         _settings.RunInBackground = RunInBackgroundToggle.IsOn;
         if (_settings.RunInBackground)
         {
+            _trayIcon.SetVisible(true);
             _backgroundRefresh.Start();
         }
         else
         {
+            _trayIcon.SetVisible(false);
             await _backgroundRefresh.StopAsync();
         }
     }
@@ -857,6 +892,7 @@ public sealed partial class MainWindow : Window
 
         args.Cancel = true;
         WindowInterop.Hide(this);
+        _trayIcon.SetVisible(true);
         _trayIcon.ShowBackgroundHint();
     }
 
