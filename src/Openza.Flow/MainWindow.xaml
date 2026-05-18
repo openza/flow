@@ -760,6 +760,11 @@
                                         Text="Tune how Openza Flow looks, notifies you, and stays available in Windows." />
                                 </StackPanel>
 
+                                <InfoBar
+                                    x:Name="SettingsInfoBar"
+                                    IsOpen="False"
+                                    Severity="Informational" />
+
                                 <TextBlock
                                     Margin="0,12,0,2"
                                     Style="{ThemeResource BodyStrongTextBlockStyle}"
@@ -874,12 +879,26 @@
                                                 Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                                 Text="Show Windows notifications when new review requests appear." />
                                         </StackPanel>
-                                        <ToggleSwitch
-                                            x:Name="NotificationsToggle"
+                                        <StackPanel
                                             Grid.Column="2"
                                             VerticalAlignment="Center"
-                                            AutomationProperties.Name="Notifications"
-                                            Toggled="OnNotificationsToggled" />
+                                            Orientation="Horizontal"
+                                            Spacing="8">
+                                            <Button
+                                                AutomationProperties.Name="Send test notification"
+                                                Click="OnTestNotificationClicked"
+                                                ToolTipService.ToolTip="Send test notification">
+                                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                                    <SymbolIcon Symbol="Comment" />
+                                                    <TextBlock Text="Test" />
+                                                </StackPanel>
+                                            </Button>
+                                            <ToggleSwitch
+                                                x:Name="NotificationsToggle"
+                                                VerticalAlignment="Center"
+                                                AutomationProperties.Name="Notifications"
+                                                Toggled="OnNotificationsToggled" />
+                                        </StackPanel>
                                     </Grid>
                                 </Border>
 

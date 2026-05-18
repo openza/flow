@@ -22,6 +22,7 @@ public sealed partial class MainWindow : Window
     private readonly AppSettingsService _settings;
     private readonly BackgroundRefreshService _backgroundRefresh;
     private readonly TrayIconService _trayIcon;
+    private readonly FlowNotificationService _notifications;
     private readonly ObservableCollection<PrListItem> _pullRequests = [];
     private readonly ObservableCollection<PrListItem> _reviewedPullRequests = [];
     private readonly ObservableCollection<PrListItem> _recentlyCreatedPullRequests = [];
@@ -47,7 +48,8 @@ public sealed partial class MainWindow : Window
         IFlowCacheStore cacheStore,
         AppSettingsService settings,
         BackgroundRefreshService backgroundRefresh,
-        TrayIconService trayIcon)
+        TrayIconService trayIcon,
+        FlowNotificationService notifications)
     {
         _tokenStore = tokenStore;
         _authService = authService;
@@ -56,6 +58,7 @@ public sealed partial class MainWindow : Window
         _settings = settings;
         _backgroundRefresh = backgroundRefresh;
         _trayIcon = trayIcon;
+        _notifications = notifications;
 
         InitializeComponent();
         ExtendsContentIntoTitleBar = true;
@@ -795,6 +798,34 @@ public sealed partial class MainWindow : Window
         }
 
         _settings.NotificationsEnabled = NotificationsToggle.IsOn;
+        if (!_settings.NotificationsEnabled)
+        {
+            SettingsInfoBar.IsOpen = false;
+            return;
+        }
+
+        if (!_notifications.CanShowNotifications(out var message))
+        {
+            ShowSettingsMessage(message, InfoBarSeverity.Warning);
+            return;
+        }
+
+        if (!_settings.RunInBackground)
+        {
+            ShowSettingsMessage("Notifications are on. Turn on Run in background to get alerts while Flow is closed.", InfoBarSeverity.Informational);
+        }
+    }
+
+    private void OnTestNotificationClicked(object sender, RoutedEventArgs e)
+    {
+        if (!_settings.NotificationsEnabled)
+        {
+            ShowSettingsMessage("Turn on notifications first.", InfoBarSeverity.Warning);
+            return;
+        }
+
+        var sent = _notifications.ShowTestNotification(out var message);
+        ShowSettingsMessage(message, sent ? InfoBarSeverity.Success : InfoBarSeverity.Warning);
     }
 
     private async void OnRunInBackgroundToggled(object sender, RoutedEventArgs e)
@@ -853,6 +884,13 @@ public sealed partial class MainWindow : Window
             "dark" => ElementTheme.Dark,
             _ => ElementTheme.Default
         };
+    }
+
+    private void ShowSettingsMessage(string message, InfoBarSeverity severity)
+    {
+        SettingsInfoBar.Severity = severity;
+        SettingsInfoBar.Message = message;
+        SettingsInfoBar.IsOpen = true;
     }
 
     private static void CopyText(string text)

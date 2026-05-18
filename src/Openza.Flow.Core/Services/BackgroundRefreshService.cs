@@ -116,7 +116,7 @@ public sealed class BackgroundRefreshService : IDisposable
     private void DetectNewPullRequests(IReadOnlyList<PullRequest> pullRequests)
     {
         var currentIds = pullRequests.Select(pr => pr.Id).ToHashSet();
-        if (_hasLoadedOnce && _knownPullRequestIds.Count > 0)
+        if (_hasLoadedOnce)
         {
             var newPullRequests = pullRequests.Where(pr => !_knownPullRequestIds.Contains(pr.Id)).ToList();
             if (newPullRequests.Count > 0)

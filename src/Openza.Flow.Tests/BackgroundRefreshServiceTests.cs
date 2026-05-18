@@ -40,6 +40,28 @@ public sealed class BackgroundRefreshServiceTests
         Assert.Equal(2, pr.Id);
     }
 
+    [Fact]
+    public async Task LaterRefreshNotifiesWhenBaselineWasEmpty()
+    {
+        var calls = 0;
+        var service = new BackgroundRefreshService(_ =>
+        {
+            calls++;
+            IReadOnlyList<PullRequest> result = calls == 1
+                ? []
+                : [MakePullRequest(1)];
+            return Task.FromResult(result);
+        });
+        IReadOnlyList<PullRequest>? notified = null;
+        service.NewReviewRequestsFound += (_, args) => notified = args.PullRequests;
+
+        await service.RefreshOnceAsync();
+        await service.RefreshOnceAsync();
+
+        var pr = Assert.Single(notified!);
+        Assert.Equal(1, pr.Id);
+    }
+
     private static PullRequest MakePullRequest(int id)
     {
         return new PullRequest(

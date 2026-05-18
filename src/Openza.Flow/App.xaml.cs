@@ -50,6 +50,7 @@ public partial class App : Application
             });
         };
         _notifications.Initialize();
+        var launchNotificationUrl = _notifications.GetLaunchNotificationUrl();
 
         _backgroundRefresh = new BackgroundRefreshService(async ct =>
         {
@@ -67,12 +68,21 @@ public partial class App : Application
         };
 
         _tray = new TrayIconService("Assets\\app_icon.ico");
-        _window = new MainWindow(tokenStore, auth, pullRequests, cacheStore, settings, _backgroundRefresh, _tray);
+        _window = new MainWindow(tokenStore, auth, pullRequests, cacheStore, settings, _backgroundRefresh, _tray, _notifications);
         _tray.OpenRequested += (_, _) => _window.ShowWindow();
         _tray.RefreshRequested += (_, _) => _ = DispatcherQueue.TryEnqueue(() => _ = _window.RefreshAsync());
         _tray.ExitRequested += (_, _) => _ = DispatcherQueue.TryEnqueue(() => _window.ExitApplication());
 
         _window.Activate();
+        if (!string.IsNullOrWhiteSpace(launchNotificationUrl))
+        {
+            _ = DispatcherQueue.TryEnqueue(() =>
+            {
+                _window.ShowWindow();
+                _ = Windows.System.Launcher.LaunchUriAsync(new Uri(launchNotificationUrl));
+            });
+        }
+
         if (settings.RunInBackground)
         {
             _tray.SetVisible(true);
