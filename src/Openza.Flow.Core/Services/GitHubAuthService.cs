@@ -132,6 +132,32 @@ public sealed class GitHubAuthService
         return result;
     }
 
+    public async Task<bool> EnsureStoredCredentialsAsync(CancellationToken cancellationToken = default)
+    {
+        var token = await _tokenStore.GetTokenAsync(cancellationToken);
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            await _tokenStore.ClearAsync(cancellationToken);
+            return false;
+        }
+
+        var username = await _tokenStore.GetUsernameAsync(cancellationToken);
+        if (!string.IsNullOrWhiteSpace(username))
+        {
+            return true;
+        }
+
+        var validation = await ValidateTokenAsync(token, cancellationToken);
+        if (validation.IsValid && !string.IsNullOrWhiteSpace(validation.Username))
+        {
+            await _tokenStore.SaveUsernameAsync(validation.Username, cancellationToken);
+            return true;
+        }
+
+        await _tokenStore.ClearAsync(cancellationToken);
+        return false;
+    }
+
     public async Task<TokenValidationResult> ValidateTokenAsync(string token, CancellationToken cancellationToken = default)
     {
         using var request = new HttpRequestMessage(HttpMethod.Get, $"{GitHubConstants.ApiBaseUrl}/user");

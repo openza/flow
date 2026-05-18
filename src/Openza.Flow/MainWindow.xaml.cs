@@ -159,8 +159,7 @@ public sealed partial class MainWindow : Window
     {
         ApplyTheme();
         await InitializeSettingsAsync();
-        var token = await _tokenStore.GetTokenAsync();
-        if (string.IsNullOrWhiteSpace(token))
+        if (!await _authService.EnsureStoredCredentialsAsync())
         {
             ShowAuth();
             return;

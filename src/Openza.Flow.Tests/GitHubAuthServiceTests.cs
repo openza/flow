@@ -35,6 +35,38 @@ public sealed class GitHubAuthServiceTests
         Assert.Contains("repo", result.ErrorMessage, StringComparison.OrdinalIgnoreCase);
     }
 
+    [Fact]
+    public async Task EnsureStoredCredentialsRepairsMissingUsername()
+    {
+        var tokenStore = new InMemoryTokenStore();
+        await tokenStore.SaveTokenAsync("token");
+        var service = new GitHubAuthService(
+            new HttpClient(new StubHandler(_ => ResponseWithScopes("repo, read:user"))),
+            tokenStore);
+
+        var isAuthenticated = await service.EnsureStoredCredentialsAsync();
+
+        Assert.True(isAuthenticated);
+        Assert.Equal("token", await tokenStore.GetTokenAsync());
+        Assert.Equal("octocat", await tokenStore.GetUsernameAsync());
+    }
+
+    [Fact]
+    public async Task EnsureStoredCredentialsClearsInvalidPartialState()
+    {
+        var tokenStore = new InMemoryTokenStore();
+        await tokenStore.SaveTokenAsync("token");
+        var service = new GitHubAuthService(
+            new HttpClient(new StubHandler(_ => new HttpResponseMessage(HttpStatusCode.Unauthorized))),
+            tokenStore);
+
+        var isAuthenticated = await service.EnsureStoredCredentialsAsync();
+
+        Assert.False(isAuthenticated);
+        Assert.Null(await tokenStore.GetTokenAsync());
+        Assert.Null(await tokenStore.GetUsernameAsync());
+    }
+
     private static HttpResponseMessage ResponseWithScopes(string scopes)
     {
         var response = new HttpResponseMessage(HttpStatusCode.OK)
