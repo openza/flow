@@ -1,58 +1,37 @@
 ---
 title: Reviewing PRs
-description: How to effectively review pull requests with Openza Flow
+description: How to use Openza Flow for pull request review work
 ---
 
 import { Steps, Aside } from '@astrojs/starlight/components';
 
 # Reviewing Pull Requests
 
-Openza Flow provides a streamlined interface for managing your PR review workflow.
+Openza Flow is designed to answer one question quickly: what pull request work needs my attention?
 
-## PR Inbox Overview
+## Main Views
 
-When you open Openza Flow, you'll see your PR inbox organized into two tabs:
+| View | Purpose |
+| --- | --- |
+| **Review Requests** | Pull requests where GitHub has requested your review |
+| **Created** | Open pull requests authored by you |
+| **Recently Reviewed** | Pull requests you recently reviewed |
+| **Recently Created** | Recent pull requests authored by you |
 
-| Tab | Sections |
-|-----|----------|
-| **Review Requests** | Pending Reviews, Recently Reviewed |
-| **Created** | Open Pull Requests, Recently Created |
-
-## Viewing PR Details
-
-Each PR card shows:
-- PR title
-- Repository name (owner/repo format)
-- PR number and branch info
-- Author information with avatar
-- Labels with color coding
-- Time since last update
-- Draft status (if applicable)
-
-<Aside type="tip">
-  Click on any PR card to open it directly on GitHub for a full review.
-</Aside>
-
-## Quick Actions
+## Common Workflow
 
 <Steps>
-1. **Open PR** - Click the PR card to open it in your browser
-2. **Search** - Use the search bar to find specific PRs
-3. **Refresh** - Click the refresh button to fetch latest data
-4. **Toggle Theme** - Switch between dark and light mode
+1. Start with **Review Requests** and clear anything waiting on you.
+2. Use **Created** to check whether your PRs need follow-up.
+3. Use search when you know the repository, author, or title you want.
+4. Filter by organization when work and personal GitHub activity are mixed.
+5. Open a PR on GitHub when you are ready to review, comment, approve, or merge.
 </Steps>
 
-## Search
+<Aside type="note">
+  V1 intentionally does not perform review actions inside Flow. GitHub remains the place for approving, commenting, requesting changes, merging, and editing PRs.
+</Aside>
 
-Use the search bar in the header to filter PRs:
-- Search by PR title
-- Search by repository name
-- Search by author
-- Uses GitHub's search syntax
+## Refresh
 
-## Workflow Tips
-
-1. **Check Review Requests first** - Address PRs waiting for your review
-2. **Use notifications** - Desktop notifications alert you to new review requests
-3. **Regular refresh** - Openza Flow auto-refreshes every 5 minutes, but you can trigger manual refresh anytime
-4. **Track your PRs** - Use the Created tab to monitor feedback on your own PRs
+Use the refresh button for an immediate update. If background mode is enabled, Flow can keep refreshing and notify you when a new review request appears.

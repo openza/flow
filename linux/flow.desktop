@@ -1,9 +1,0 @@
-[Desktop Entry]
-Name=Openza Flow
-Comment=GitHub PR Review Inbox
-Exec=flow
-Icon=flow
-Type=Application
-Categories=Development;
-Terminal=false
-StartupWMClass=flow

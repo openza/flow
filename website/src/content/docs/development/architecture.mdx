@@ -1,78 +1,48 @@
 ---
 title: Architecture
-description: Understanding the Openza Flow codebase architecture
+description: Understanding the Openza Flow WinUI codebase
 ---
 
-Openza Flow follows Clean Architecture principles with feature-based organization.
+# Architecture
+
+Openza Flow is split into a small WinUI app layer and a testable core library.
 
 ## Project Structure
 
-```
-lib/
-├── main.dart                 # Entry point
-├── app.dart                  # Root widget
-│
-├── core/                     # Shared utilities
-│   ├── constants/           # App-wide constants
-│   ├── models/              # Shared models
-│   ├── services/            # Core services
-│   │   ├── graphql_service.dart
-│   │   ├── local_storage_service.dart
-│   │   └── notification_service.dart
-│   └── theme/               # App theming
-│
-└── features/                 # Feature modules
-    ├── auth/                # Authentication
-    │   ├── data/           # Token repository
-    │   └── presentation/   # Login UI
-    │
-    └── pull_requests/       # PR display
-        ├── data/           # PR repository
-        ├── domain/         # PR models
-        └── presentation/   # PR list UI
+```text
+src/
+  Openza.Flow/
+    App.xaml
+    MainWindow.xaml
+    Services/
+    ViewModels/
+    Package.appxmanifest
+
+  Openza.Flow.Core/
+    Models/
+    Services/
+
+  Openza.Flow.Tests/
 ```
 
-## Key Technologies
+## Layers
 
-| Layer | Technology |
-|-------|------------|
-| State Management | Riverpod |
-| GitHub API | GraphQL |
-| HTTP Client | http package |
-| Caching | Hive |
-| Secure Storage | flutter_secure_storage |
-| Notifications | local_notifier |
-| Image Caching | cached_network_image |
+| Layer | Responsibility |
+| --- | --- |
+| `Openza.Flow` | WinUI screens, Credential Locker integration, tray icon, settings, startup task, toasts, app lifecycle |
+| `Openza.Flow.Core` | GitHub auth, GraphQL query building, DTO mapping, cache, background refresh decisions |
+| `Openza.Flow.Tests` | Unit tests for auth parsing, query composition, mapping, cache, and refresh notification rules |
 
-## GitHub API
+## GitHub Access
 
-Openza Flow uses GitHub's GraphQL API (v4) for efficient data fetching:
+The app uses `HttpClient` and `System.Text.Json` for GitHub REST and GraphQL calls. Query builders and mappers live in the core project so they can be tested without launching WinUI.
 
-```graphql
-query GetPullRequests {
-  viewer {
-    pullRequests(first: 50, states: OPEN) {
-      nodes {
-        title
-        repository { nameWithOwner }
-        reviewDecision
-        ...
-      }
-    }
-  }
-}
-```
+## Storage
 
-This allows fetching all required data in a single request.
+- Tokens: Windows Credential Locker
+- Settings: app local settings
+- Cache: JSON files in app local data
 
-## Data Flow
+## Legacy Flutter App
 
-```
-UI → Providers → Repository → GraphQL Service → GitHub API
-```
-
-1. **UI** triggers data requests through Riverpod providers
-2. **Providers** call repository methods
-3. **Repository** makes GraphQL queries
-4. **GraphQL Service** handles API communication
-5. Results flow back through the same chain
+The Flutter app is preserved in `legacy/flutter` and `legacy-flutter-v0.2.0`. It is not maintained side by side with the WinUI app.

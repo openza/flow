@@ -1,45 +1,36 @@
 ---
 title: Notifications
-description: Desktop notifications in Openza Flow
+description: Windows notifications in Openza Flow
 ---
 
 import { Aside } from '@astrojs/starlight/components';
 
-# Desktop Notifications
+# Notifications
 
-Openza Flow sends desktop notifications to alert you when new pull requests need your review.
+Openza Flow can show Windows toast notifications when new review requests appear.
 
-## How It Works
+## Behavior
 
-When Openza Flow detects new PR review requests during a refresh, it will send a desktop notification:
+- Notifications are opt-in.
+- The first load does not notify you about existing PRs.
+- Later refreshes notify only when a newly seen review request appears.
+- Toast clicks can focus Flow and open the relevant pull request where supported.
 
-- **Single PR**: Shows the PR title and repository name
-- **Multiple PRs**: Shows the count of new PRs awaiting your review
+## Background Mode
+
+By default, closing the window quits Openza Flow. If you enable **Run in background**, closing the window hides Flow to the tray and background refresh can continue.
+
+The tray menu includes:
+
+- Open
+- Refresh
+- Pause or resume notifications
+- Exit
 
 <Aside type="note">
-  Openza Flow uses your system's native notification system (Windows notifications on Windows, libnotify on Linux).
+  Background mode and Start with Windows are separate settings. Enable only the behavior you want.
 </Aside>
-
-## Notification Behavior
-
-- Notifications are sent automatically when new review requests are detected
-- The first load after launching the app does not trigger notifications
-- Subsequent refreshes (auto or manual) will notify you of new PRs
 
 ## Troubleshooting
 
-### Notifications Not Showing
-
-1. Check that system notifications are enabled in your desktop environment
-2. Verify Openza Flow has notification permissions
-3. Check that "Do Not Disturb" mode is off
-
-### On Flatpak
-
-Flatpak apps need notification portal access:
-
-```bash
-flatpak permission-show com.openza.flow
-```
-
-Ensure `notifications` is listed as `yes`.
+If notifications do not appear, check Windows notification settings, Focus Assist / Do Not Disturb, and the app's notification setting inside Flow.

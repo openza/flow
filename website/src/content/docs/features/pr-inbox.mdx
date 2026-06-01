@@ -1,72 +1,28 @@
 ---
-title: PR Inbox
-description: Understanding the Openza Flow PR inbox interface
+title: PR Dashboard
+description: Understanding the Openza Flow pull request dashboard
 ---
 
-The PR Inbox is the main interface of Openza Flow, showing all your pull request activity in one place.
+# PR Dashboard
 
-## Inbox Tabs
+The dashboard groups pull request work into focused views so you can scan quickly and open GitHub only when you need to act.
 
-Openza Flow organizes your PRs into two main tabs:
+## Review Requests
 
-### Review Requests Tab
+Shows open pull requests where your review is requested. This is the default work queue.
 
-This tab shows PRs that need your attention:
+## Created Pull Requests
 
-**Pending Reviews**
-- PRs where you've been requested as a reviewer
-- Shows PR title, repository, and author
-- Displays time since last update
+Shows open pull requests authored by you. Use this to track feedback and merge readiness.
 
-**Recently Reviewed**
-- PRs you've recently reviewed
-- Shows your review status (Approved, Changes Requested, Commented, Pending)
-- Helps you track PRs you're involved with
+## Recent Activity
 
-### Created Tab
+The dashboard also keeps quick access to recently reviewed and recently created pull requests, so PRs do not disappear from view immediately after you act.
 
-This tab shows PRs you've authored:
+## Search and Organization Filter
 
-**Open Pull Requests**
-- Your currently open PRs
-- Track review status from your team
-- See merge readiness at a glance
+Search is debounced so typing does not flood GitHub. Organization filtering helps focus on one workspace at a time and is remembered across sessions.
 
-**Recently Created**
-- Your most recently created PRs
-- Quick access to PRs you've authored
+## Cache
 
-## PR Card Information
-
-Each PR card displays:
-
-| Field | Description |
-|-------|-------------|
-| **Title** | The PR title |
-| **Repository** | Owner/repo format |
-| **PR Number** | PR number (e.g., #123) |
-| **Author** | PR author with avatar |
-| **Labels** | PR labels with colors |
-| **Base/Head** | Branch information |
-| **Updated** | Time since last update |
-| **Draft** | Draft status indicator |
-
-## Organization Filter
-
-Filter PRs by organization using the dropdown in the header:
-
-- **All Organizations** - Show PRs from all your organizations
-- **Specific Org** - Show only PRs from the selected organization
-
-The filter applies to all tabs and is remembered across sessions.
-
-## Actions
-
-- **Click** - Open the PR in your browser on GitHub
-- **Search** - Use the search bar to filter PRs by text
-
-## Refresh Behavior
-
-- Auto-refresh every 5 minutes in the background
-- Manual refresh with the refresh button in the header
-- Theme toggle (dark/light mode) available in the header
+Openza Flow caches default first-page data in the app's local data folder. Search and organization-filtered views are refreshed from GitHub so the results stay explicit to the filter you chose.

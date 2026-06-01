@@ -1,0 +1,7 @@
+{
+  "profiles": {
+    "Openza Flow": {
+      "commandName": "MsixPackage"
+    }
+  }
+}

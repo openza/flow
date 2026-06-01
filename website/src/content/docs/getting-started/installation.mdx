@@ -1,77 +1,56 @@
 ---
 title: Installation
-description: How to install Openza Flow on Windows and Linux
+description: How to install Openza Flow on Windows
 ---
 
-import { Tabs, TabItem, Steps } from '@astrojs/starlight/components';
+import { Steps, Aside } from '@astrojs/starlight/components';
 
-Openza Flow is available for Windows and Linux.
+# Installation
 
-## Download
+Openza Flow V1 is Windows-first and distributed through MSIX / Microsoft Store packaging.
 
-<Tabs>
-  <TabItem label="Windows">
-    Download the Windows installer from [GitHub Releases](https://github.com/openza/flow/releases/latest).
+## Requirements
 
-    <Steps>
-    1. Download the `Openza-Flow-*-Setup.exe` file
-    2. Run the installer
-    3. Follow the setup wizard
-    4. Launch Openza Flow from the Start menu or desktop shortcut
-    </Steps>
+- Windows 10 22H2 or newer, or Windows 11
+- x64 PC for the first Store package
+- GitHub account
 
-    **System Requirements:**
-    - Windows 10 or newer (64-bit)
-  </TabItem>
+## Microsoft Store
 
-  <TabItem label="AppImage">
-    Download the latest AppImage from the [GitHub Releases](https://github.com/openza/flow/releases/latest) page.
+When the Store listing is live, install Openza Flow from Microsoft Store and launch it from the Start menu.
 
-    <Steps>
-    1. Download the `.AppImage` file
-    2. Make it executable:
-       ```bash
-       chmod +x Openza-Flow-*.AppImage
-       ```
-    3. Run the application:
-       ```bash
-       ./Openza-Flow-*.AppImage
-       ```
-    </Steps>
+<Aside type="note">
+  The Store package is the preferred release path because it provides trusted signing, clean install, automatic updates, and uninstall behavior.
+</Aside>
 
-    **System Requirements:**
-    - Ubuntu 22.04+, Fedora 35+, or Debian 12+
-    - GLIBC 2.34 or newer
-  </TabItem>
+## Developer Build
 
-  <TabItem label="Flatpak">
-    Download the Flatpak bundle from [GitHub Releases](https://github.com/openza/flow/releases/latest).
+Use this path only if you are building from source.
 
-    <Steps>
-    1. Install Flatpak if not already installed:
-       ```bash
-       # Ubuntu/Debian
-       sudo apt install flatpak
+<Steps>
+1. Install Visual Studio 2026 Community or newer with the Windows App SDK / WinUI workload.
 
-       # Fedora
-       sudo dnf install flatpak
-       ```
-    2. Install Openza Flow:
-       ```bash
-       flatpak install Openza-Flow-*.flatpak
-       ```
-    3. Run the application:
-       ```bash
-       flatpak run com.openza.flow
-       ```
-    </Steps>
-  </TabItem>
-</Tabs>
+2. Install the .NET 10 SDK.
 
-## Build from Source
+3. Clone the repository.
 
-If you prefer to build from source, see the [Building from Source](/flow/development/building) guide.
+   ```powershell
+   git clone https://github.com/openza/flow.git
+   cd flow
+   ```
 
-## Next Steps
+4. Restore, test, and build.
 
-After installation, proceed to [Authentication](/flow/getting-started/github-token) to connect your GitHub account.
+   ```powershell
+   dotnet restore src\Openza.Flow.Tests\Openza.Flow.Tests.csproj
+   dotnet test src\Openza.Flow.Tests\Openza.Flow.Tests.csproj -c Release --no-restore
+   dotnet restore src\Openza.Flow\Openza.Flow.csproj
+   dotnet build src\Openza.Flow\Openza.Flow.csproj -c Release --no-restore
+   ```
+
+5. For packaged debugging in Visual Studio, select the `Package` debug profile and enable Deploy for `Openza.Flow` in Configuration Manager.
+</Steps>
+
+## Legacy Downloads
+
+Older Flutter/Linux artifacts may remain in historical GitHub Releases, but they are legacy and not the active implementation.

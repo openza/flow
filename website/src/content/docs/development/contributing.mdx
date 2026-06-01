@@ -5,72 +5,44 @@ description: How to contribute to Openza Flow
 
 import { Steps, Aside } from '@astrojs/starlight/components';
 
-We welcome contributions to Openza Flow! Here's how to get started.
+# Contributing
 
-## Getting Started
+Thanks for helping improve Openza Flow.
+
+## Setup
 
 <Steps>
-1. **Fork the repository** on GitHub
-
-2. **Clone your fork**
-   ```bash
-   git clone https://github.com/YOUR_USERNAME/flow.git
-   cd flow
-   ```
-
-3. **Create a branch**
-   ```bash
-   git checkout -b feature/your-feature-name
-   ```
-
-4. **Make your changes** following our coding standards
-
-5. **Test your changes**
-   ```bash
-   flutter test
-   flutter analyze
-   ```
-
-6. **Submit a pull request**
+1. Fork the repository on GitHub.
+2. Clone your fork.
+3. Create a focused branch.
+4. Make changes in the WinUI app, core library, tests, or docs.
+5. Run tests and build before opening a pull request.
 </Steps>
 
-## Coding Standards
-
-- Follow the [Dart Style Guide](https://dart.dev/guides/language/effective-dart/style)
-- Use `flutter analyze` to check for issues
-- Write tests for new features
-- Keep commits atomic and well-described
+```powershell
+dotnet restore src\Openza.Flow.Tests\Openza.Flow.Tests.csproj
+dotnet test src\Openza.Flow.Tests\Openza.Flow.Tests.csproj -c Release --no-restore
+dotnet restore src\Openza.Flow\Openza.Flow.csproj
+dotnet build src\Openza.Flow\Openza.Flow.csproj -c Release --no-restore
+```
 
 ## Pull Request Guidelines
 
+- Keep PRs focused on one feature or fix.
+- Add tests when changing GitHub API logic, auth, cache, background refresh, or notification behavior.
+- Include screenshots for UI changes.
+- Do not commit access tokens, signing certificates, MSIX packages, `.msixupload` files, Visual Studio user files, or Partner Center private data.
+
 <Aside type="tip">
-  Link any related issues in your pull request description.
+  For feature ideas that change the workflow, open an issue first so the shape can be discussed before implementation.
 </Aside>
 
-- Describe what your PR does and why
-- Include screenshots for UI changes
-- Ensure all tests pass
-- Keep PRs focused on a single feature or fix
+## Docs
 
-## Areas to Contribute
+Docs live in `website/`.
 
-- **Bug fixes** - Check the issues for reported bugs
-- **New features** - Discuss in an issue first
-- **Documentation** - Help improve these docs
-- **Tests** - Increase test coverage
-- **Translations** - Add new language support
-
-## Reporting Issues
-
-Found a bug? Have a feature request?
-
-1. Search [existing issues](https://github.com/openza/flow/issues) first
-2. If not found, create a new issue with:
-   - Clear description
-   - Steps to reproduce (for bugs)
-   - Expected vs actual behavior
-   - System information
-
-## License
-
-By contributing, you agree that your contributions will be licensed under the MIT License.
+```powershell
+cd website
+pnpm install
+pnpm build
+```

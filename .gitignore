@@ -48,8 +48,17 @@ app.*.map.json
 .metadata
 .env
 .claude/
+.vs/
+*.user
+*.rsuser
+*.suo
+TestResults/
 
 # Build artifacts
+bin/
+obj/
+**/bin/
+**/obj/
 *.AppImage
 *.flatpak
 *.AppDir/
@@ -59,3 +68,25 @@ flatpak/.flatpak-builder/
 flatpak/build-dir/
 flatpak/repo/
 flatpak/build/
+
+# Windows packaging and signing artifacts
+AppPackages/
+**/AppPackages/
+BundleArtifacts/
+**/BundleArtifacts/
+*.appx
+*.appxbundle
+*.appxupload
+*.msix
+*.msixbundle
+*.msixupload
+*.cer
+*.pfx
+*.pvk
+*.snk
+*.wapproj.user
+
+# Legacy Flutter generated folders kept out of the WinUI migration branch
+linux/flutter/ephemeral/
+macos/Flutter/ephemeral/
+windows/flutter/ephemeral/
