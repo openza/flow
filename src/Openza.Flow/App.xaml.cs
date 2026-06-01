@@ -51,7 +51,7 @@ public partial class App : Application
 
         _backgroundRefresh = new BackgroundRefreshService(async ct =>
         {
-            var result = await pullRequests.GetReviewRequestsAsync(cancellationToken: ct);
+            var result = await pullRequests.GetReviewRequestsAsync(organization: settings.SelectedOrganization, cancellationToken: ct);
             return result.Items;
         });
         _backgroundRefresh.NewReviewRequestsFound += (_, eventArgs) =>
