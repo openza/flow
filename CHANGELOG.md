@@ -30,7 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Race condition in SelectedOrgNotifier async initialization causing duplicate API calls
 - OAuthService cancellation race condition when restarting device flow quickly
-- Flatpak: URL opening now works correctly (portal + platformDefault)
+- Legacy package URL opening now works correctly
 - OAuth screen now displays correct app logo
 
 ### Changed
@@ -47,4 +47,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Desktop notifications for new PRs
 - Auto-refresh every 5 minutes
 - Dark/Light theme support
-- AppImage and Flatpak packaging
+- Legacy desktop packaging
