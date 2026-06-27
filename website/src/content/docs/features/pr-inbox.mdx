@@ -23,6 +23,10 @@ The dashboard also keeps quick access to recently reviewed and recently created 
 
 Search is debounced so typing does not flood GitHub. Organization filtering helps focus on one workspace at a time and is remembered across sessions.
 
+## Releases and Actions
+
+Releases and Actions are separate read-only pages scoped to the selected organization. Flow scans the first 50 recently pushed repositories in that organization, then shows recent releases and workflow runs across those repositories. Draft releases appear only when your GitHub credential can see them.
+
 ## Cache
 
 Openza Flow caches default first-page data in the app's local data folder. Search and organization-filtered views are refreshed from GitHub so the results stay explicit to the filter you chose.

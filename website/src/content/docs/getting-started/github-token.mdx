@@ -7,7 +7,7 @@ import { Steps, Aside } from '@astrojs/starlight/components';
 
 # GitHub Sign-in
 
-Openza Flow needs a GitHub credential to read pull request metadata for your account. You can use GitHub OAuth device flow or a Personal Access Token.
+Openza Flow needs a GitHub credential to read pull request, release, and workflow-run metadata for your account. You can use GitHub OAuth device flow or a Personal Access Token.
 
 ## Sign in with GitHub
 
@@ -32,7 +32,7 @@ Use this fallback if OAuth is not suitable for your environment.
 <Steps>
 1. Select **Use personal access token**.
 2. Create a token from GitHub Developer settings.
-3. Grant access needed for the repositories you want Flow to show.
+3. Grant access needed for the repositories you want Flow to show. Classic tokens should include `repo` or `public_repo`, plus `read:user` and `read:org`.
 4. Paste the token into Openza Flow and connect.
 </Steps>
 
@@ -43,6 +43,8 @@ Use this fallback if OAuth is not suitable for your environment.
 ## Storage
 
 Tokens are stored in Windows Credential Locker. Openza Flow does not sync credentials to Openza servers and does not migrate credentials from the legacy Flutter app.
+
+Draft releases appear only when GitHub returns them for the signed-in account's permissions. Releases and Actions views are read-only and open GitHub for details.
 
 ## Sign Out
 
