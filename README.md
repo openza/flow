@@ -1,14 +1,15 @@
 # Openza Flow
 
-Openza Flow is a Windows-native GitHub pull request dashboard built with WinUI 3. It keeps review requests, created pull requests, recently reviewed work, and organization filters in one focused desktop app.
+Openza Flow is a Windows-native GitHub work dashboard built with WinUI 3. It keeps review requests, created pull requests, recent releases, workflow runs, and organization filters in one focused desktop app.
 
-V1 is Windows-first and Store-ready. The earlier Flutter implementation is preserved in the `legacy/flutter` branch and `legacy-flutter-v0.2.0` tag for historical releases, but the active app in this repository is now the WinUI 3 version.
+V1 is Windows-first and pre-release while Microsoft Store packaging is prepared. The earlier Flutter implementation is preserved in the `legacy/flutter` branch and `legacy-flutter-v0.2.0` tag for historical context, but the active app in this repository is now the WinUI 3 version.
 
 ## Features
 
 - Native Windows 10/11 interface with WinUI 3, NavigationView, CommandBar, Mica where available, and Windows theme support
 - GitHub OAuth device-flow sign-in with a Personal Access Token fallback
 - Review requests, created PRs, recently reviewed PRs, recently created PRs, organization filter, search, pagination, and refresh
+- Read-only release and GitHub Actions feeds across the first 50 repositories in the selected organization
 - Secure token storage through Windows Credential Locker
 - Local JSON cache for default first-page data so the dashboard can show useful state quickly
 - Optional background mode with tray icon and Windows toast notifications for new review requests
@@ -36,13 +37,13 @@ For local packaged debugging in Visual Studio, set the startup project to `Openz
 
 ## Store Packaging
 
-The package identity target is `Openza.OpenzaFlow`. Store association, publisher identity, signing, and `.msixupload` creation are done from Visual Studio using the Microsoft Store packaging wizard.
+The package identity target is `Openza.OpenzaFlow`. Store association, publisher identity, signing, and `.msixupload` creation will be done from Visual Studio using the Microsoft Store packaging wizard before public Store release.
 
 Do not commit generated packages, certificates, `.msixupload` files, Visual Studio user files, or Partner Center private data.
 
 ## GitHub Authentication
 
-Openza Flow uses GitHub OAuth device flow by default. The OAuth client ID is public application metadata, not a secret. PAT sign-in is kept as a fallback for users who prefer manually scoped credentials.
+Openza Flow uses GitHub OAuth device flow by default. The OAuth client ID is public application metadata, not a secret. PAT sign-in is kept as a fallback for users who prefer manually scoped credentials. Classic tokens need `repo` or `public_repo`, plus `read:user` and `read:org`, for the app's read-only repository, release, and Actions views.
 
 Tokens are stored in Windows Credential Locker. The WinUI migration intentionally does not migrate credentials or cache from the legacy Flutter app; users sign in again.
 
