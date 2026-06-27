@@ -13,13 +13,15 @@ Tokens are stored locally in Windows Credential Locker and are used only to call
 
 ## GitHub Data
 
-Openza Flow reads pull request metadata from GitHub so it can show your review requests, created pull requests, recently reviewed pull requests, recently created pull requests, organization filters, and notifications.
+Openza Flow reads pull request, repository, release, and workflow-run metadata from GitHub so it can show your review requests, created pull requests, recently reviewed pull requests, recently created pull requests, release feeds, Actions feeds, organization filters, and notifications.
+
+Release and Actions pages are read-only. Draft releases appear only when GitHub returns them for the signed-in account's permissions.
 
 Some first-page/default pull request data is cached as JSON in the app's local data folder to make the dashboard faster. Organization-filtered and searched views are refreshed from GitHub.
 
 ## Network Requests
 
-Openza Flow connects to GitHub API endpoints and opens GitHub pull request links in your default browser. It does not send your GitHub data to Openza servers.
+Openza Flow connects to GitHub API endpoints and opens GitHub pull request, release, and workflow-run links in your default browser. It does not send your GitHub data to Openza servers.
 
 ## Background Mode
 

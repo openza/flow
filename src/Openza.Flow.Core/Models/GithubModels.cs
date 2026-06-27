@@ -30,6 +30,14 @@ public sealed record GithubRepository(
     public string Name => FullName.Split('/').LastOrDefault() ?? string.Empty;
 }
 
+public sealed record GithubRepositorySummary(
+    string FullName,
+    string Owner,
+    string Name,
+    string HtmlUrl,
+    string DefaultBranch,
+    DateTimeOffset PushedAt);
+
 public sealed record GithubLabel(
     int Id,
     string Name,
@@ -81,6 +89,37 @@ public sealed record GithubOrganization(
     string Name,
     string AvatarUrl);
 
+public sealed record GithubRelease(
+    long Id,
+    GithubRepository Repository,
+    string Name,
+    string TagName,
+    string HtmlUrl,
+    string Author,
+    bool Draft,
+    bool Prerelease,
+    DateTimeOffset CreatedAt,
+    DateTimeOffset? PublishedAt)
+{
+    public DateTimeOffset SortTimestamp => PublishedAt ?? CreatedAt;
+}
+
+public sealed record GithubWorkflowRun(
+    long Id,
+    GithubRepository Repository,
+    string WorkflowName,
+    string DisplayTitle,
+    string Status,
+    string Conclusion,
+    string Event,
+    string Branch,
+    string CommitSha,
+    string CommitTitle,
+    long RunNumber,
+    string HtmlUrl,
+    DateTimeOffset CreatedAt,
+    DateTimeOffset UpdatedAt);
+
 public sealed record PaginatedResult<T>(
     IReadOnlyList<T> Items,
     bool HasNextPage,
@@ -88,3 +127,9 @@ public sealed record PaginatedResult<T>(
 {
     public static PaginatedResult<T> Empty { get; } = new([], false, null);
 }
+
+public sealed record RepositoryActivityResult<T>(
+    IReadOnlyList<T> Items,
+    int ScannedRepositoryCount,
+    int SkippedRepositoryCount,
+    IReadOnlyList<string> Warnings);

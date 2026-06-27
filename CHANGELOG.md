@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - GitHub OAuth device-flow sign-in and PAT fallback in the WinUI app.
 - Review requests, created pull requests, recently reviewed, recently created, search, organization filter, pagination, and refresh.
+- Read-only Releases and Actions pages across the first 50 recently pushed repositories in the selected organization.
 - Windows Credential Locker token storage.
 - Local JSON cache for first-page/default dashboard data.
 - Optional background mode with tray icon and Windows toast notifications.

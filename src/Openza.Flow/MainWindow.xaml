@@ -115,7 +115,7 @@
                                 PlaceholderText="Paste a GitHub personal access token" />
                             <TextBlock
                                 Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                Text="Use a token with repo or public_repo plus read:user scope."
+                                Text="Use a token with repo or public_repo plus read:user and read:org scopes."
                                 TextWrapping="WrapWholeWords" />
                             <StackPanel
                                 HorizontalAlignment="Right"
@@ -140,7 +140,7 @@
                 IsPaneOpen="True"
                 CompactPaneLength="56"
                 OpenPaneLength="220"
-                PaneDisplayMode="LeftCompact"
+                PaneDisplayMode="Left"
                 SelectionChanged="OnNavigationSelectionChanged"
                 Visibility="Collapsed">
                 <NavigationView.MenuItems>
@@ -156,6 +156,18 @@
                         Icon="Edit"
                         Tag="created"
                         ToolTipService.ToolTip="Created pull requests" />
+                    <NavigationViewItem
+                        x:Name="ReleasesNavItem"
+                        Content="Releases"
+                        Icon="Download"
+                        Tag="releases"
+                        ToolTipService.ToolTip="Releases across repositories" />
+                    <NavigationViewItem
+                        x:Name="ActionsNavItem"
+                        Content="Actions"
+                        Icon="Play"
+                        Tag="actions"
+                        ToolTipService.ToolTip="Workflow runs across repositories" />
                 </NavigationView.MenuItems>
                 <NavigationView.PaneFooter>
                     <NavigationViewItem
@@ -442,6 +454,127 @@
                                 </PivotItem>
                             </Pivot>
                         </Grid>
+                    </Grid>
+
+                    <Grid
+                        x:Name="RepositoryActivityContent"
+                        Grid.Row="1"
+                        Padding="22,20,22,18"
+                        Visibility="Collapsed">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Spacing="3">
+                                <TextBlock
+                                    x:Name="RepositoryActivityTitle"
+                                    Style="{ThemeResource SubtitleTextBlockStyle}"
+                                    Text="Releases" />
+                                <TextBlock
+                                    x:Name="RepositoryActivitySubtitle"
+                                    FontSize="13"
+                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                    Text="Choose an organization to scan repositories." />
+                            </StackPanel>
+                            <ProgressRing
+                                x:Name="RepositoryActivityLoadingRing"
+                                Grid.Column="1"
+                                Width="22"
+                                Height="22"
+                                VerticalAlignment="Center"
+                                IsActive="False" />
+                        </Grid>
+
+                        <ListView
+                            x:Name="RepositoryActivityList"
+                            Grid.Row="1"
+                            Margin="0,12,0,12"
+                            SelectionMode="None">
+                            <ListView.ItemContainerStyle>
+                                <Style TargetType="ListViewItem">
+                                    <Setter Property="Margin" Value="0,0,0,10" />
+                                    <Setter Property="Padding" Value="0" />
+                                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                </Style>
+                            </ListView.ItemContainerStyle>
+                            <ListView.ItemTemplate>
+                                <DataTemplate>
+                                    <controls:RepositoryActivityRowControl OpenRequested="OnRepositoryActivityOpenRequested" />
+                                </DataTemplate>
+                            </ListView.ItemTemplate>
+                        </ListView>
+
+                        <StackPanel
+                            x:Name="RepositoryActivityEmptyState"
+                            Grid.Row="1"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Spacing="8"
+                            Visibility="Collapsed">
+                            <SymbolIcon
+                                Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                                Symbol="Find" />
+                            <TextBlock
+                                x:Name="RepositoryActivityEmptyTitle"
+                                HorizontalAlignment="Center"
+                                Style="{ThemeResource SubtitleTextBlockStyle}"
+                                Text="Choose an organization" />
+                            <TextBlock
+                                x:Name="RepositoryActivityEmptyMessage"
+                                MaxWidth="520"
+                                HorizontalAlignment="Center"
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                Text="Releases and Actions are scoped to one selected organization."
+                                TextAlignment="Center"
+                                TextWrapping="WrapWholeWords" />
+                        </StackPanel>
+
+                        <StackPanel
+                            x:Name="RepositoryActivityErrorState"
+                            Grid.Row="1"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Spacing="10"
+                            Visibility="Collapsed">
+                            <SymbolIcon
+                                Foreground="{ThemeResource SystemFillColorCriticalBrush}"
+                                Symbol="Important" />
+                            <TextBlock
+                                HorizontalAlignment="Center"
+                                Style="{ThemeResource SubtitleTextBlockStyle}"
+                                Text="Something went wrong" />
+                            <TextBlock
+                                x:Name="RepositoryActivityErrorMessage"
+                                MaxWidth="520"
+                                HorizontalAlignment="Center"
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                TextAlignment="Center"
+                                TextWrapping="WrapWholeWords" />
+                            <Button
+                                Click="OnRefreshClicked"
+                                Content="Try again" />
+                        </StackPanel>
+
+                        <StackPanel
+                            Grid.Row="2"
+                            Orientation="Horizontal"
+                            Spacing="8">
+                            <Button
+                                Click="OnRefreshClicked"
+                                Content="Refresh" />
+                            <TextBlock
+                                x:Name="RepositoryActivityStatusText"
+                                VerticalAlignment="Center"
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                Text="Ready" />
+                        </StackPanel>
                     </Grid>
 
                     <Grid

@@ -18,6 +18,7 @@ public sealed partial class MainWindow : Window
     private readonly ITokenStore _tokenStore;
     private readonly GitHubAuthService _authService;
     private readonly GitHubPullRequestService _pullRequestService;
+    private readonly GitHubRepositoryActivityService _repositoryActivityService;
     private readonly IFlowCacheStore _cacheStore;
     private readonly AppSettingsService _settings;
     private readonly BackgroundRefreshService _backgroundRefresh;
@@ -26,6 +27,9 @@ public sealed partial class MainWindow : Window
     private readonly ObservableCollection<PrListItem> _pullRequests = [];
     private readonly ObservableCollection<PrListItem> _reviewedPullRequests = [];
     private readonly ObservableCollection<PrListItem> _recentlyCreatedPullRequests = [];
+    private readonly ObservableCollection<RepositoryActivityListItem> _repositoryActivityItems = [];
+    private IReadOnlyList<GithubRelease> _loadedReleases = [];
+    private IReadOnlyList<GithubWorkflowRun> _loadedWorkflowRuns = [];
     private readonly DispatcherQueueTimer _searchTimer;
     private readonly DispatcherQueueTimer _autoRefreshTimer;
 
@@ -45,6 +49,7 @@ public sealed partial class MainWindow : Window
         ITokenStore tokenStore,
         GitHubAuthService authService,
         GitHubPullRequestService pullRequestService,
+        GitHubRepositoryActivityService repositoryActivityService,
         IFlowCacheStore cacheStore,
         AppSettingsService settings,
         BackgroundRefreshService backgroundRefresh,
@@ -54,6 +59,7 @@ public sealed partial class MainWindow : Window
         _tokenStore = tokenStore;
         _authService = authService;
         _pullRequestService = pullRequestService;
+        _repositoryActivityService = repositoryActivityService;
         _cacheStore = cacheStore;
         _settings = settings;
         _backgroundRefresh = backgroundRefresh;
@@ -77,6 +83,7 @@ public sealed partial class MainWindow : Window
         PullRequestList.ItemsSource = _pullRequests;
         ReviewedList.ItemsSource = _reviewedPullRequests;
         RecentlyCreatedList.ItemsSource = _recentlyCreatedPullRequests;
+        RepositoryActivityList.ItemsSource = _repositoryActivityItems;
 
         _searchTimer = DispatcherQueue.CreateTimer();
         _searchTimer.Interval = TimeSpan.FromMilliseconds(500);
@@ -114,6 +121,12 @@ public sealed partial class MainWindow : Window
     {
         if (DashboardView.Visibility != Visibility.Visible || _pageMode == PageMode.Settings)
         {
+            return;
+        }
+
+        if (_pageMode is PageMode.Releases or PageMode.Actions)
+        {
+            await LoadRepositoryActivityAsync();
             return;
         }
 
@@ -500,6 +513,125 @@ public sealed partial class MainWindow : Window
         }
     }
 
+    private async Task LoadRepositoryActivityAsync()
+    {
+        _loadCts?.Cancel();
+        _loadCts = new CancellationTokenSource();
+        var cancellationToken = _loadCts.Token;
+        var loadGeneration = ++_loadGeneration;
+        var organization = SelectedOrganization;
+        var query = SearchBox.Text?.Trim() ?? string.Empty;
+
+        SetRepositoryActivityLoading(true);
+        HideRepositoryActivityError();
+        try
+        {
+            if (string.IsNullOrWhiteSpace(organization))
+            {
+                _loadedReleases = [];
+                _loadedWorkflowRuns = [];
+                ReplaceList(_repositoryActivityItems, []);
+                ShowRepositoryActivityEmpty("Choose an organization", "Releases and Actions are scoped to one selected organization.");
+                RepositoryActivityStatusText.Text = "Choose an organization";
+                return;
+            }
+
+            if (_pageMode == PageMode.Releases)
+            {
+                RepositoryActivityTitle.Text = "Releases";
+                RepositoryActivitySubtitle.Text = $"Recent releases across repositories in {organization}.";
+                var result = await _repositoryActivityService.GetRecentReleasesAsync(organization, cancellationToken);
+                if (!IsRepositoryActivityLoadCurrent(loadGeneration, organization, cancellationToken))
+                {
+                    return;
+                }
+
+                _loadedReleases = result.Items;
+                ApplyReleaseFilter(query);
+                RepositoryActivityStatusText.Text = ActivityStatus("release", _repositoryActivityItems.Count, result.ScannedRepositoryCount, result.SkippedRepositoryCount);
+            }
+            else if (_pageMode == PageMode.Actions)
+            {
+                RepositoryActivityTitle.Text = "Actions";
+                RepositoryActivitySubtitle.Text = $"Recent workflow runs across repositories in {organization}.";
+                var result = await _repositoryActivityService.GetRecentWorkflowRunsAsync(organization, cancellationToken);
+                if (!IsRepositoryActivityLoadCurrent(loadGeneration, organization, cancellationToken))
+                {
+                    return;
+                }
+
+                _loadedWorkflowRuns = result.Items;
+                ApplyWorkflowRunFilter(query);
+                RepositoryActivityStatusText.Text = ActivityStatus("workflow run", _repositoryActivityItems.Count, result.ScannedRepositoryCount, result.SkippedRepositoryCount);
+            }
+
+            UpdateRepositoryActivityEmptyState();
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        catch (Exception exception)
+        {
+            RepositoryActivityStatusText.Text = exception.Message;
+            ShowRepositoryActivityError(exception.Message);
+            AppLog.Write(exception);
+        }
+        finally
+        {
+            if (loadGeneration == _loadGeneration)
+            {
+                SetRepositoryActivityLoading(false);
+            }
+        }
+    }
+
+    private void ApplyRepositoryActivityFilter()
+    {
+        var query = SearchBox.Text?.Trim() ?? string.Empty;
+        if (_pageMode == PageMode.Releases)
+        {
+            ApplyReleaseFilter(query);
+        }
+        else if (_pageMode == PageMode.Actions)
+        {
+            ApplyWorkflowRunFilter(query);
+        }
+
+        UpdateRepositoryActivityEmptyState();
+    }
+
+    private void ApplyReleaseFilter(string query)
+    {
+        ReplaceList(
+            _repositoryActivityItems,
+            _loadedReleases
+                .Where(release => RepositoryActivitySearch.MatchesRelease(release, query))
+                .Select(release => new RepositoryActivityListItem(release)));
+    }
+
+    private void ApplyWorkflowRunFilter(string query)
+    {
+        ReplaceList(
+            _repositoryActivityItems,
+            _loadedWorkflowRuns
+                .Where(run => RepositoryActivitySearch.MatchesWorkflowRun(run, query))
+                .Select(run => new RepositoryActivityListItem(run)));
+    }
+
+    private bool IsRepositoryActivityLoadCurrent(int loadGeneration, string organization, CancellationToken cancellationToken)
+    {
+        return !cancellationToken.IsCancellationRequested
+            && loadGeneration == _loadGeneration
+            && organization == SelectedOrganization;
+    }
+
+    private static string ActivityStatus(string noun, int visibleCount, int scannedCount, int skippedCount)
+    {
+        var plural = visibleCount == 1 ? noun : $"{noun}s";
+        var skipped = skippedCount == 0 ? string.Empty : $", skipped {skippedCount}";
+        return $"{visibleCount} {plural} from {scannedCount} repos{skipped}";
+    }
+
     private string? SelectedOrganization => OrganizationCombo.SelectedItem is OrgFilterItem item ? item.Login : null;
 
     private void SetLoading(bool isLoading)
@@ -509,6 +641,14 @@ public sealed partial class MainWindow : Window
         OrganizationCombo.IsEnabled = !isLoading;
         LoadMoreButton.IsEnabled = !isLoading && _hasNextPage;
         UpdatePrimaryEmptyState(isLoading);
+    }
+
+    private void SetRepositoryActivityLoading(bool isLoading)
+    {
+        RepositoryActivityLoadingRing.IsActive = isLoading;
+        SearchBox.IsEnabled = !isLoading;
+        OrganizationCombo.IsEnabled = !isLoading;
+        UpdateRepositoryActivityEmptyState(isLoading);
     }
 
     private void UpdatePrimaryEmptyState(bool isLoading = false)
@@ -521,6 +661,32 @@ public sealed partial class MainWindow : Window
         PrimaryEmptyState.Visibility = showEmptyState ? Visibility.Visible : Visibility.Collapsed;
     }
 
+    private void UpdateRepositoryActivityEmptyState(bool isLoading = false)
+    {
+        if (RepositoryActivityContent.Visibility != Visibility.Visible)
+        {
+            return;
+        }
+
+        var showEmptyState = RepositoryActivityErrorState.Visibility != Visibility.Visible
+            && !isLoading
+            && _repositoryActivityItems.Count == 0;
+        RepositoryActivityEmptyState.Visibility = showEmptyState ? Visibility.Visible : Visibility.Collapsed;
+        if (showEmptyState && !string.IsNullOrWhiteSpace(SelectedOrganization))
+        {
+            RepositoryActivityEmptyTitle.Text = _pageMode == PageMode.Releases ? "No releases found" : "No workflow runs found";
+            RepositoryActivityEmptyMessage.Text = "No matching items were found for this organization and search.";
+        }
+    }
+
+    private void ShowRepositoryActivityEmpty(string title, string message)
+    {
+        RepositoryActivityEmptyTitle.Text = title;
+        RepositoryActivityEmptyMessage.Text = message;
+        RepositoryActivityEmptyState.Visibility = Visibility.Visible;
+        RepositoryActivityErrorState.Visibility = Visibility.Collapsed;
+    }
+
     private void ShowPrimaryError(string message)
     {
         PrimaryErrorMessage.Text = message;
@@ -528,10 +694,23 @@ public sealed partial class MainWindow : Window
         PrimaryEmptyState.Visibility = Visibility.Collapsed;
     }
 
+    private void ShowRepositoryActivityError(string message)
+    {
+        RepositoryActivityErrorMessage.Text = message;
+        RepositoryActivityErrorState.Visibility = Visibility.Visible;
+        RepositoryActivityEmptyState.Visibility = Visibility.Collapsed;
+    }
+
     private void HidePrimaryError()
     {
         PrimaryErrorState.Visibility = Visibility.Collapsed;
         PrimaryErrorMessage.Text = string.Empty;
+    }
+
+    private void HideRepositoryActivityError()
+    {
+        RepositoryActivityErrorState.Visibility = Visibility.Collapsed;
+        RepositoryActivityErrorMessage.Text = string.Empty;
     }
 
     private static void ReplaceList<T>(ObservableCollection<T> target, IEnumerable<T> items)
@@ -675,6 +854,14 @@ public sealed partial class MainWindow : Window
         await OpenPullRequestAsync(item);
     }
 
+    private async void OnRepositoryActivityOpenRequested(object? sender, RepositoryActivityListItem item)
+    {
+        if (Uri.TryCreate(item.HtmlUrl, UriKind.Absolute, out var uri))
+        {
+            await Windows.System.Launcher.LaunchUriAsync(uri);
+        }
+    }
+
     private void OnPrNumberCopyRequested(object? sender, PrListItem item)
     {
         CopyText(item.Number.ToString());
@@ -695,6 +882,7 @@ public sealed partial class MainWindow : Window
         {
             _pageMode = PageMode.Settings;
             MainContent.Visibility = Visibility.Collapsed;
+            RepositoryActivityContent.Visibility = Visibility.Collapsed;
             SettingsContent.Visibility = Visibility.Visible;
             return;
         }
@@ -704,16 +892,43 @@ public sealed partial class MainWindow : Window
             return;
         }
 
-        _pageMode = item.Tag as string == "created" ? PageMode.Created : PageMode.ReviewRequests;
-        MainContent.Visibility = Visibility.Visible;
+        _pageMode = (item.Tag as string) switch
+        {
+            "created" => PageMode.Created,
+            "releases" => PageMode.Releases,
+            "actions" => PageMode.Actions,
+            _ => PageMode.ReviewRequests
+        };
+        MainContent.Visibility = _pageMode is PageMode.ReviewRequests or PageMode.Created ? Visibility.Visible : Visibility.Collapsed;
+        RepositoryActivityContent.Visibility = _pageMode is PageMode.Releases or PageMode.Actions ? Visibility.Visible : Visibility.Collapsed;
         SettingsContent.Visibility = Visibility.Collapsed;
-        await LoadPrimaryListAsync(useCacheFirst: true);
+        SearchBox.PlaceholderText = _pageMode switch
+        {
+            PageMode.Releases => "Search releases",
+            PageMode.Actions => "Search workflow runs",
+            _ => "Search pull requests"
+        };
+
+        if (_pageMode is PageMode.Releases or PageMode.Actions)
+        {
+            await LoadRepositoryActivityAsync();
+        }
+        else
+        {
+            await LoadPrimaryListAsync(useCacheFirst: true);
+        }
     }
 
     private void OnSearchTextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
     {
         if (args.Reason != AutoSuggestionBoxTextChangeReason.UserInput)
         {
+            return;
+        }
+
+        if (_pageMode is PageMode.Releases or PageMode.Actions)
+        {
+            ApplyRepositoryActivityFilter();
             return;
         }
 
@@ -754,6 +969,9 @@ public sealed partial class MainWindow : Window
         _pullRequests.Clear();
         _reviewedPullRequests.Clear();
         _recentlyCreatedPullRequests.Clear();
+        _repositoryActivityItems.Clear();
+        _loadedReleases = [];
+        _loadedWorkflowRuns = [];
         ShowAuth();
     }
 
@@ -933,6 +1151,8 @@ public sealed partial class MainWindow : Window
     {
         ReviewRequests,
         Created,
+        Releases,
+        Actions,
         Settings
     }
 }

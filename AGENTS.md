@@ -38,3 +38,4 @@ Openza Flow is a Windows-first GitHub pull-request dashboard.
 - Run `dotnet restore Openza.Flow.slnx`.
 - Run `dotnet test src/Openza.Flow.Tests/Openza.Flow.Tests.csproj -c Release --no-restore`.
 - Run `dotnet build src/Openza.Flow/Openza.Flow.csproj -c Release --no-restore`.
+- If WinUI `dotnet build` or MSIX packaging commands hang, time out, or fail because the sandbox blocks certificate access, retry the same command with escalated permissions before changing build strategy.

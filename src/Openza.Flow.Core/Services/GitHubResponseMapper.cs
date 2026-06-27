@@ -5,6 +5,93 @@ namespace Openza.Flow.Core.Services;
 
 public static class GitHubResponseMapper
 {
+    public static IReadOnlyList<GithubRepositorySummary> MapRepositorySummaries(JsonElement root)
+    {
+        if (root.ValueKind != JsonValueKind.Array)
+        {
+            return [];
+        }
+
+        return root.EnumerateArray()
+            .Where(node => node.ValueKind == JsonValueKind.Object)
+            .Select(node =>
+            {
+                var owner = ReadObject(node, "owner");
+                var ownerLogin = ReadString(owner, "login");
+                var name = ReadString(node, "name");
+                return new GithubRepositorySummary(
+                    ReadString(node, "full_name", string.IsNullOrWhiteSpace(ownerLogin) ? name : $"{ownerLogin}/{name}"),
+                    ownerLogin,
+                    name,
+                    ReadString(node, "html_url"),
+                    ReadString(node, "default_branch"),
+                    ReadDateTimeOffset(node, "pushed_at"));
+            })
+            .ToList();
+    }
+
+    public static IReadOnlyList<GithubRelease> MapReleases(JsonElement root, GithubRepositorySummary repository)
+    {
+        if (root.ValueKind != JsonValueKind.Array)
+        {
+            return [];
+        }
+
+        var repo = new GithubRepository(repository.FullName, repository.HtmlUrl);
+        return root.EnumerateArray()
+            .Where(node => node.ValueKind == JsonValueKind.Object)
+            .Select(node =>
+            {
+                var author = ReadObject(node, "author");
+                var name = ReadString(node, "name");
+                var tagName = ReadString(node, "tag_name");
+                return new GithubRelease(
+                    ReadLong(node, "id"),
+                    repo,
+                    string.IsNullOrWhiteSpace(name) ? tagName : name,
+                    tagName,
+                    ReadString(node, "html_url"),
+                    ReadString(author, "login"),
+                    ReadBool(node, "draft"),
+                    ReadBool(node, "prerelease"),
+                    ReadDateTimeOffset(node, "created_at"),
+                    ReadNullableDateTimeOffset(node, "published_at"));
+            })
+            .ToList();
+    }
+
+    public static IReadOnlyList<GithubWorkflowRun> MapWorkflowRuns(JsonElement root, GithubRepositorySummary repository)
+    {
+        if (!root.TryGetProperty("workflow_runs", out var runs) || runs.ValueKind != JsonValueKind.Array)
+        {
+            return [];
+        }
+
+        var repo = new GithubRepository(repository.FullName, repository.HtmlUrl);
+        return runs.EnumerateArray()
+            .Where(node => node.ValueKind == JsonValueKind.Object)
+            .Select(node =>
+            {
+                var headCommit = ReadObject(node, "head_commit");
+                return new GithubWorkflowRun(
+                    ReadLong(node, "id"),
+                    repo,
+                    ReadString(node, "name"),
+                    ReadString(node, "display_title", ReadString(node, "name")),
+                    ReadString(node, "status"),
+                    ReadString(node, "conclusion"),
+                    ReadString(node, "event"),
+                    ReadString(node, "head_branch"),
+                    ReadString(node, "head_sha"),
+                    ReadString(headCommit, "message"),
+                    ReadLong(node, "run_number"),
+                    ReadString(node, "html_url"),
+                    ReadDateTimeOffset(node, "created_at"),
+                    ReadDateTimeOffset(node, "updated_at"));
+            })
+            .ToList();
+    }
+
     public static PaginatedResult<PullRequest> MapPullRequestSearch(JsonElement search)
     {
         return MapSearch(search, MapPullRequest);
@@ -234,6 +321,15 @@ public static class GitHubResponseMapper
             : 0;
     }
 
+    private static long ReadLong(JsonElement element, string propertyName)
+    {
+        return element.ValueKind == JsonValueKind.Object
+            && element.TryGetProperty(propertyName, out var value)
+            && value.TryGetInt64(out var result)
+            ? result
+            : 0;
+    }
+
     private static bool ReadBool(JsonElement element, string propertyName)
     {
         return element.ValueKind == JsonValueKind.Object
@@ -250,5 +346,11 @@ public static class GitHubResponseMapper
     {
         var value = ReadNullableString(element, propertyName);
         return DateTimeOffset.TryParse(value, out var result) ? result : fallback;
+    }
+
+    private static DateTimeOffset? ReadNullableDateTimeOffset(JsonElement element, string propertyName)
+    {
+        var value = ReadNullableString(element, propertyName);
+        return DateTimeOffset.TryParse(value, out var result) ? result : null;
     }
 }
