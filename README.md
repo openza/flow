@@ -49,13 +49,7 @@ Tokens are stored in Windows Credential Locker. The WinUI migration intentionall
 
 ## Documentation
 
-The docs site lives in `website/` and is built with Astro Starlight.
-
-```powershell
-cd website
-pnpm install
-pnpm build
-```
+User guide: [solanky.dev/openza/flow](https://solanky.dev/openza/flow/)
 
 ## Privacy
 
