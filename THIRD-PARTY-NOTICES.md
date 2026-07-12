@@ -7,7 +7,7 @@ Openza Flow depends on third-party packages and platform components. This file s
 | Component | Version | License metadata | Purpose |
 | --- | --- | --- | --- |
 | CommunityToolkit.Mvvm | 8.4.2 | MIT | MVVM helpers |
-| Microsoft.WindowsAppSDK | 2.0.1 | Package license file | WinUI 3, Windows notifications, and Windows App SDK runtime |
+| Microsoft.WindowsAppSDK | 2.0.1 | NuGet package file `license.txt` | WinUI 3, Windows notifications, and Windows App SDK runtime |
 
 ## Test dependencies
 
