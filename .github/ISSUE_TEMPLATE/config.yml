@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: User guide
+    url: https://solanky.dev/openza/flow/
+    about: Check the user guide before filing an issue.
+  - name: Report a vulnerability
+    url: https://github.com/openza/flow/security/advisories/new
+    about: Report security problems privately. Do not open a public issue.
