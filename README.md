@@ -57,7 +57,7 @@ Openza Flow does not collect telemetry, analytics, crash reports, or personal da
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) for details.
+The source code and documentation are available under the [MIT License](LICENSE). Openza names, logos, and official app icons are reserved brand assets; see [BRAND.md](BRAND.md). Third-party dependencies remain subject to their respective licenses; see [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
 
 ## Author
 

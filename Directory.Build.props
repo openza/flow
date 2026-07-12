@@ -4,5 +4,12 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     <LangVersion>14.0</LangVersion>
+    <Authors>Deependra Solanky and Openza contributors</Authors>
+    <Company>Openza</Company>
+    <Product>Openza Flow</Product>
+    <Copyright>Copyright (c) 2025 Deependra Solanky and Openza contributors</Copyright>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/openza/flow</RepositoryUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
   </PropertyGroup>
 </Project>
