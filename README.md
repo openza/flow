@@ -2,7 +2,7 @@
 
 Openza Flow is a Windows-native GitHub work dashboard built with WinUI 3. It keeps review requests, created pull requests, recent releases, workflow runs, and organization filters in one focused desktop app.
 
-V1 is Windows-first and pre-release while Microsoft Store packaging is prepared. The earlier Flutter implementation is preserved in the `legacy/flutter` branch and `legacy-flutter-v0.2.0` tag for historical context, but the active app in this repository is now the WinUI 3 version.
+V1 is Windows-first and packaged for distribution through the Microsoft Store. The earlier Flutter implementation is preserved in the `legacy/flutter` branch and `legacy-flutter-v0.2.0` tag for historical context, but the active app in this repository is now the WinUI 3 version.
 
 ## Features
 
@@ -37,7 +37,7 @@ For local packaged debugging in Visual Studio, set the startup project to `Openz
 
 ## Store Packaging
 
-The package identity target is `Openza.OpenzaFlow`. Store association, publisher identity, signing, and `.msixupload` creation will be done from Visual Studio using the Microsoft Store packaging wizard before public Store release.
+The release package is associated with the Microsoft Store identity `Openza.OpenzaFlow`. Release builds use the Store identity and publisher, while Debug builds use the separate `Openza.OpenzaFlow.Dev` identity for local development. Create signed `.msixupload` submissions from Visual Studio using the Microsoft Store packaging wizard.
 
 Do not commit generated packages, certificates, `.msixupload` files, Visual Studio user files, or Partner Center private data.
 
