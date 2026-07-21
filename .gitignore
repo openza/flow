@@ -85,6 +85,7 @@ BundleArtifacts/
 *.pvk
 *.snk
 *.wapproj.user
+Package.StoreAssociation.xml
 
 # Legacy Flutter generated folders kept out of the WinUI migration branch
 linux/flutter/ephemeral/

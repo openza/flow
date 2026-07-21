@@ -2,9 +2,11 @@
 <Package
   xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
   xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+  xmlns:desktop="http://schemas.microsoft.com/appx/manifest/desktop/windows10"
+  xmlns:com="http://schemas.microsoft.com/appx/manifest/com/windows10"
   xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
   xmlns:mp="http://schemas.microsoft.com/appx/2014/phone/manifest"
-  IgnorableNamespaces="uap rescap mp">
+  IgnorableNamespaces="uap desktop com rescap mp">
   <Identity Name="Openza.OpenzaFlow.Dev" Publisher="CN=Openza" Version="1.0.0.0" ProcessorArchitecture="x64" />
   <mp:PhoneIdentity
     PhoneProductId="44761ff8-e0a6-4ea9-976d-d44c5b01c680"
@@ -30,6 +32,21 @@
         Square150x150Logo="Assets\Square150x150Logo.png">
         <uap:DefaultTile Wide310x150Logo="Assets\Wide310x150Logo.png" />
       </uap:VisualElements>
+      <Extensions>
+        <desktop:Extension Category="windows.startupTask" Executable="Openza.Flow.exe" EntryPoint="Windows.FullTrustApplication">
+          <desktop:StartupTask TaskId="OpenzaFlowStartupTask" Enabled="false" DisplayName="Openza Flow" />
+        </desktop:Extension>
+        <desktop:Extension Category="windows.toastNotificationActivation">
+          <desktop:ToastNotificationActivation ToastActivatorCLSID="9C2C8B1F-080B-48ED-85DF-6C417346F086" />
+        </desktop:Extension>
+        <com:Extension Category="windows.comServer">
+          <com:ComServer>
+            <com:ExeServer Executable="Openza.Flow.exe" DisplayName="Openza Flow" Arguments="----AppNotificationActivated:">
+              <com:Class Id="9C2C8B1F-080B-48ED-85DF-6C417346F086" DisplayName="Openza Flow" />
+            </com:ExeServer>
+          </com:ComServer>
+        </com:Extension>
+      </Extensions>
     </Application>
   </Applications>
   <Capabilities>
