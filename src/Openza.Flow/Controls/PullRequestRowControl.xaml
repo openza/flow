@@ -3,7 +3,7 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <Border
-        Padding="{x:Bind RowPadding, Mode=OneWay}"
+        Padding="{x:Bind RowPadding, Mode=OneTime}"
         Background="{ThemeResource LayerFillColorDefaultBrush}"
         BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
         BorderThickness="0,0,0,1"
@@ -17,10 +17,10 @@
             </Grid.ColumnDefinitions>
 
             <Button
-                MinWidth="{x:Bind NumberButtonMinWidth, Mode=OneWay}"
-                Height="{x:Bind NumberButtonHeight, Mode=OneWay}"
-                Margin="{x:Bind NumberButtonMargin, Mode=OneWay}"
-                Padding="{x:Bind NumberButtonPadding, Mode=OneWay}"
+                MinWidth="{x:Bind NumberButtonMinWidth, Mode=OneTime}"
+                Height="{x:Bind NumberButtonHeight, Mode=OneTime}"
+                Margin="{x:Bind NumberButtonMargin, Mode=OneTime}"
+                Padding="{x:Bind NumberButtonPadding, Mode=OneTime}"
                 VerticalAlignment="Top"
                 Background="#f6f8fa"
                 BorderBrush="#d0d7de"
@@ -32,17 +32,17 @@
                 <TextBlock
                     HorizontalAlignment="Center"
                     VerticalAlignment="Center"
-                    FontSize="{x:Bind NumberTextFontSize, Mode=OneWay}"
+                    FontSize="{x:Bind NumberTextFontSize, Mode=OneTime}"
                     FontWeight="SemiBold"
                     Foreground="#0969da"
                     Text="{Binding DisplayNumber}" />
             </Button>
 
-            <StackPanel Grid.Column="1" Spacing="{x:Bind ContentSpacing, Mode=OneWay}">
+            <StackPanel Grid.Column="1" Spacing="{x:Bind ContentSpacing, Mode=OneTime}">
                 <TextBlock
-                    FontSize="{x:Bind TitleFontSize, Mode=OneWay}"
+                    FontSize="{x:Bind TitleFontSize, Mode=OneTime}"
                     FontWeight="SemiBold"
-                    MaxLines="{x:Bind TitleMaxLines, Mode=OneWay}"
+                    MaxLines="{x:Bind TitleMaxLines, Mode=OneTime}"
                     Text="{Binding Title}"
                     TextTrimming="CharacterEllipsis" />
                 <TextBlock
@@ -50,7 +50,7 @@
                     Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                     Text="{Binding Summary}"
                     TextTrimming="CharacterEllipsis"
-                    Visibility="{x:Bind SummaryVisibility, Mode=OneWay}" />
+                    Visibility="{x:Bind SummaryVisibility, Mode=OneTime}" />
                 <StackPanel
                     Opacity="0.76"
                     Orientation="Horizontal"
@@ -59,7 +59,7 @@
                         Width="16"
                         Height="16"
                         Source="{Binding AuthorAvatarUrl}"
-                        Visibility="{x:Bind AuthorVisibility, Mode=OneWay}" />
+                        Visibility="{x:Bind AuthorVisibility, Mode=OneTime}" />
                     <TextBlock
                         FontSize="12"
                         Foreground="{ThemeResource TextFillColorTertiaryBrush}"
@@ -70,7 +70,7 @@
                         Foreground="{ThemeResource TextFillColorTertiaryBrush}"
                         Text="{Binding Author}"
                         TextTrimming="CharacterEllipsis"
-                        Visibility="{x:Bind AuthorVisibility, Mode=OneWay}" />
+                        Visibility="{x:Bind AuthorVisibility, Mode=OneTime}" />
                 </StackPanel>
                 <ItemsControl
                     ItemsSource="{Binding Labels}"
@@ -100,7 +100,7 @@
                 </ItemsControl>
                 <StackPanel Orientation="Horizontal" Spacing="6">
                     <Border
-                        Padding="{x:Bind BadgePadding, Mode=OneWay}"
+                        Padding="{x:Bind BadgePadding, Mode=OneTime}"
                         Background="{Binding BadgeBackground}"
                         BorderBrush="{Binding BadgeBorder}"
                         BorderThickness="1"
@@ -112,7 +112,7 @@
                             Text="{Binding Badge}" />
                     </Border>
                     <Border
-                        Padding="{x:Bind BadgePadding, Mode=OneWay}"
+                        Padding="{x:Bind BadgePadding, Mode=OneTime}"
                         Background="{Binding SecondaryBadgeBackground}"
                         BorderBrush="{Binding SecondaryBadgeBorder}"
                         BorderThickness="1"
