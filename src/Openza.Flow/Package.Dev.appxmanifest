@@ -7,7 +7,7 @@
   xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
   xmlns:mp="http://schemas.microsoft.com/appx/2014/phone/manifest"
   IgnorableNamespaces="uap desktop com rescap mp">
-  <Identity Name="Openza.OpenzaFlow.Dev" Publisher="CN=Openza" Version="1.0.0.0" ProcessorArchitecture="x64" />
+  <Identity Name="Openza.OpenzaFlow.Dev" Publisher="CN=Openza" Version="1.1.0.0" ProcessorArchitecture="x64" />
   <mp:PhoneIdentity
     PhoneProductId="44761ff8-e0a6-4ea9-976d-d44c5b01c680"
     PhonePublisherId="00000000-0000-0000-0000-000000000000" />
@@ -26,7 +26,7 @@
     <Application Id="App" Executable="$targetnametoken$.exe" EntryPoint="$targetentrypoint$">
       <uap:VisualElements
         DisplayName="Openza Flow"
-        Description="Development build of Openza Flow."
+        Description="Development build of the Openza Flow Windows developer companion."
         BackgroundColor="transparent"
         Square44x44Logo="Assets\Square44x44Logo.png"
         Square150x150Logo="Assets\Square150x150Logo.png">

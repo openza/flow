@@ -1,0 +1,595 @@
+<Page
+    x:Class="Openza.Flow.Pages.AgentSessionsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="using:Openza.Flow.ViewModels"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:pages="using:Openza.Flow.Pages"
+    mc:Ignorable="d">
+
+    <Page.Resources>
+        <CollectionViewSource
+            x:Name="GroupedSessions"
+            IsSourceGrouped="True"
+            Source="{Binding Groups}" />
+
+        <Style x:Key="FilterListViewStyle" TargetType="ListView">
+            <Setter Property="SelectionMode" Value="Single" />
+            <Setter Property="IsItemClickEnabled" Value="True" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled" />
+            <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Disabled" />
+        </Style>
+
+        <DataTemplate x:Key="FilterOptionTemplate" x:DataType="local:AgentSessionFilterOption">
+            <Grid MinHeight="36" Padding="8,0" ColumnSpacing="8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock VerticalAlignment="Center" Text="{x:Bind DisplayName}" />
+                <TextBlock
+                    Grid.Column="1"
+                    VerticalAlignment="Center"
+                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                    Text="{x:Bind CountText}" />
+            </Grid>
+        </DataTemplate>
+
+        <DataTemplate x:Key="EnvironmentOptionTemplate" x:DataType="local:AgentEnvironmentFilterOption">
+            <Grid MinHeight="36" Padding="8,0" ColumnSpacing="8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock VerticalAlignment="Center" Text="{x:Bind DisplayName}" />
+                <TextBlock
+                    Grid.Column="1"
+                    VerticalAlignment="Center"
+                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                    Text="{x:Bind Count}" />
+            </Grid>
+        </DataTemplate>
+
+        <DataTemplate x:Key="GroupingOptionTemplate" x:DataType="local:AgentSessionGroupingOption">
+            <Grid MinHeight="36" Padding="8,0">
+                <TextBlock VerticalAlignment="Center" Text="{x:Bind DisplayName}" />
+            </Grid>
+        </DataTemplate>
+
+        <DataTemplate x:Key="UserMessageTemplate">
+            <Border
+                Margin="0"
+                Padding="2,14,2,16"
+                BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
+                BorderThickness="0,0,0,1">
+                <StackPanel Spacing="8">
+                    <Grid ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <FontIcon
+                            VerticalAlignment="Center"
+                            FontSize="14"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Glyph="&#xE77B;" />
+                        <TextBlock Grid.Column="1" FontWeight="SemiBold" Text="You" />
+                    </Grid>
+                    <TextBlock Text="{Binding Text}" TextWrapping="Wrap" />
+                </StackPanel>
+            </Border>
+        </DataTemplate>
+
+        <DataTemplate x:Key="AssistantMessageTemplate">
+            <Border
+                Margin="0"
+                Padding="2,14,2,16"
+                BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
+                BorderThickness="0,0,0,1">
+                <StackPanel Spacing="8">
+                    <Grid ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <FontIcon
+                            VerticalAlignment="Center"
+                            FontSize="14"
+                            Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                            Glyph="&#xE99A;" />
+                        <TextBlock Grid.Column="1" FontWeight="SemiBold" Text="Agent" />
+                    </Grid>
+                    <TextBlock Text="{Binding Text}" TextWrapping="Wrap" />
+                </StackPanel>
+            </Border>
+        </DataTemplate>
+
+        <pages:AgentSessionMessageTemplateSelector
+            x:Key="AgentSessionMessageTemplateSelector"
+            AssistantTemplate="{StaticResource AssistantMessageTemplate}"
+            UserTemplate="{StaticResource UserMessageTemplate}" />
+    </Page.Resources>
+
+    <Grid x:Name="PageRoot" SizeChanged="OnPageSizeChanged">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Grid x:Name="HeaderGrid" MinHeight="76" Padding="24,14" ColumnSpacing="12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="220" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <TextBlock
+                VerticalAlignment="Center"
+                FontSize="28"
+                FontWeight="SemiBold"
+                Text="Agent Sessions" />
+
+            <AutoSuggestBox
+                x:Name="SessionSearchBox"
+                Grid.Column="1"
+                MaxWidth="680"
+                MinWidth="220"
+                MinHeight="40"
+                HorizontalAlignment="Stretch"
+                VerticalAlignment="Center"
+                AutomationProperties.Name="Search all agent sessions"
+                PlaceholderText="Search all sessions"
+                QueryIcon="Find"
+                TextChanged="OnSearchTextChanged" />
+
+            <Button
+                x:Name="FilterButton"
+                Grid.Column="2"
+                Height="40"
+                VerticalAlignment="Center"
+                AutomationProperties.Name="Filter and group agent sessions"
+                Content="Filters"
+                Visibility="Collapsed">
+                <Button.Flyout>
+                    <Flyout Placement="BottomEdgeAlignedRight">
+                        <StackPanel Width="280" Spacing="12">
+                            <TextBlock Style="{ThemeResource SubtitleTextBlockStyle}" Text="Filters" />
+                            <ComboBox
+                                x:Name="CompactAgentCombo"
+                                Header="Agent"
+                                HorizontalAlignment="Stretch"
+                                ItemsSource="{Binding AgentFilters}"
+                                SelectionChanged="OnCompactAgentChanged" />
+                            <ComboBox
+                                x:Name="CompactEnvironmentCombo"
+                                Header="Environment"
+                                HorizontalAlignment="Stretch"
+                                ItemsSource="{Binding EnvironmentFilters}"
+                                SelectionChanged="OnCompactEnvironmentChanged" />
+                            <ComboBox
+                                x:Name="CompactSourceCombo"
+                                Header="Source"
+                                HorizontalAlignment="Stretch"
+                                ItemsSource="{Binding SourceFilters}"
+                                SelectionChanged="OnCompactSourceChanged" />
+                            <ComboBox
+                                x:Name="CompactGroupingCombo"
+                                Header="Group by"
+                                HorizontalAlignment="Stretch"
+                                ItemsSource="{Binding GroupingOptions}"
+                                SelectionChanged="OnCompactGroupingChanged" />
+                        </StackPanel>
+                    </Flyout>
+                </Button.Flyout>
+            </Button>
+
+            <ProgressRing
+                Grid.Column="3"
+                Width="22"
+                Height="22"
+                VerticalAlignment="Center"
+                IsActive="{Binding IsLoading}" />
+
+            <TextBlock
+                x:Name="SessionCountText"
+                Grid.Column="4"
+                MinWidth="88"
+                VerticalAlignment="Center"
+                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                Text="{Binding SessionCountText}"
+                TextAlignment="Right" />
+
+            <Button
+                x:Name="RefreshSessionsButton"
+                Grid.Column="5"
+                Width="40"
+                Height="40"
+                Padding="8"
+                VerticalAlignment="Center"
+                AutomationProperties.Name="Refresh agent sessions"
+                Click="OnRefreshClicked"
+                ToolTipService.ToolTip="Refresh agent sessions">
+                <FontIcon FontSize="18" Glyph="&#xE72C;" />
+            </Button>
+        </Grid>
+
+        <Grid Grid.Row="1">
+            <Border
+                x:Name="NormalStatusPanel"
+                Margin="24,0,24,10"
+                Padding="10,7"
+                Background="{ThemeResource SubtleFillColorTransparentBrush}"
+                CornerRadius="4">
+                <Grid ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <FontIcon
+                        VerticalAlignment="Center"
+                        FontSize="12"
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        Glyph="&#xE946;" />
+                    <TextBlock
+                        Grid.Column="1"
+                        VerticalAlignment="Center"
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        Text="{Binding StatusMessage}"
+                        TextTrimming="CharacterEllipsis" />
+                </Grid>
+            </Border>
+
+            <InfoBar
+                x:Name="StatusInfoBar"
+                Margin="24,0,24,10"
+                IsClosable="False"
+                IsOpen="False"
+                Message="{Binding StatusMessage}"
+                Severity="Warning"
+                Visibility="Collapsed" />
+        </Grid>
+
+        <Grid Grid.Row="2">
+            <Rectangle
+                Height="1"
+                VerticalAlignment="Top"
+                Fill="{ThemeResource DividerStrokeColorDefaultBrush}" />
+
+            <Grid x:Name="MasterDetailGrid">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition x:Name="FilterColumn" Width="220" />
+                    <ColumnDefinition x:Name="FilterSeparatorColumn" Width="1" />
+                    <ColumnDefinition x:Name="ListColumn" Width="*" />
+                    <ColumnDefinition x:Name="DetailSeparatorColumn" Width="1" />
+                    <ColumnDefinition x:Name="DetailColumn" Width="430" />
+                </Grid.ColumnDefinitions>
+
+                <Grid
+                    x:Name="FilterRail"
+                    Padding="16,16,12,16"
+                    Background="{ThemeResource LayerFillColorDefaultBrush}">
+                    <StackPanel Spacing="14">
+                        <StackPanel Spacing="5">
+                            <TextBlock Margin="8,0" FontWeight="SemiBold" Text="Agents" />
+                            <ListView
+                                x:Name="AgentFilterList"
+                                AutomationProperties.Name="Filter by agent"
+                                ItemTemplate="{StaticResource FilterOptionTemplate}"
+                                ItemsSource="{Binding AgentFilters}"
+                                SelectionChanged="OnAgentFilterChanged"
+                                Style="{StaticResource FilterListViewStyle}" />
+                        </StackPanel>
+
+                        <Rectangle Height="1" Fill="{ThemeResource DividerStrokeColorDefaultBrush}" />
+
+                        <StackPanel Spacing="5">
+                            <TextBlock Margin="8,0" FontWeight="SemiBold" Text="Environments" />
+                            <ListView
+                                x:Name="EnvironmentFilterList"
+                                AutomationProperties.Name="Filter by environment"
+                                ItemTemplate="{StaticResource EnvironmentOptionTemplate}"
+                                ItemsSource="{Binding EnvironmentFilters}"
+                                SelectionChanged="OnEnvironmentFilterChanged"
+                                Style="{StaticResource FilterListViewStyle}" />
+                        </StackPanel>
+
+                        <Rectangle Height="1" Fill="{ThemeResource DividerStrokeColorDefaultBrush}" />
+
+                        <StackPanel Spacing="5">
+                            <TextBlock Margin="8,0" FontWeight="SemiBold" Text="Group by" />
+                            <ListView
+                                x:Name="GroupingFilterList"
+                                AutomationProperties.Name="Group agent sessions by"
+                                ItemTemplate="{StaticResource GroupingOptionTemplate}"
+                                ItemsSource="{Binding GroupingOptions}"
+                                SelectionChanged="OnGroupingFilterChanged"
+                                Style="{StaticResource FilterListViewStyle}" />
+                        </StackPanel>
+
+                        <StackPanel Spacing="5">
+                            <TextBlock Margin="8,0" FontWeight="SemiBold" Text="Source" />
+                            <ListView
+                                x:Name="SourceFilterList"
+                                AutomationProperties.Name="Filter by session source"
+                                ItemTemplate="{StaticResource FilterOptionTemplate}"
+                                ItemsSource="{Binding SourceFilters}"
+                                SelectionChanged="OnSourceFilterChanged"
+                                Style="{StaticResource FilterListViewStyle}" />
+                        </StackPanel>
+                    </StackPanel>
+                </Grid>
+
+                <Rectangle
+                    Grid.Column="1"
+                    Fill="{ThemeResource DividerStrokeColorDefaultBrush}" />
+
+                <Grid x:Name="ListPanel" Grid.Column="2">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="52" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <Grid Padding="20,0,14,0">
+                        <TextBlock
+                            VerticalAlignment="Center"
+                            Style="{ThemeResource SubtitleTextBlockStyle}"
+                            Text="Recent sessions" />
+                    </Grid>
+
+                    <ListView
+                        x:Name="SessionList"
+                        Grid.Row="1"
+                        AutomationProperties.Name="Agent session history"
+                        IsItemClickEnabled="True"
+                        ItemsSource="{Binding Source={StaticResource GroupedSessions}}"
+                        ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                        SelectionChanged="OnSessionSelectionChanged"
+                        SelectionMode="Single"
+                        HorizontalContentAlignment="Stretch">
+                        <ListView.Footer>
+                            <Button
+                                x:Name="LoadMoreSessionsButton"
+                                Margin="16,8,16,16"
+                                HorizontalAlignment="Stretch"
+                                AutomationProperties.Name="Show more agent sessions"
+                                Click="OnLoadMoreSessionsClicked"
+                                Content="{Binding LoadMoreText}"
+                                Visibility="Collapsed" />
+                        </ListView.Footer>
+                        <ListView.GroupStyle>
+                            <GroupStyle>
+                                <GroupStyle.HeaderTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Margin="16,14,16,6" Spacing="1">
+                                            <TextBlock
+                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                FontWeight="SemiBold"
+                                                Text="{Binding Title}" />
+                                            <TextBlock
+                                                FontSize="12"
+                                                Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                                                Text="{Binding Subtitle}"
+                                                TextTrimming="CharacterEllipsis" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </GroupStyle.HeaderTemplate>
+                            </GroupStyle>
+                        </ListView.GroupStyle>
+                        <ListView.ItemTemplate>
+                            <DataTemplate x:DataType="local:AgentSessionListItem">
+                                <Grid MinHeight="68" Padding="14,9" ColumnSpacing="14">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="2*" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel VerticalAlignment="Center" Spacing="5">
+                                        <TextBlock
+                                            FontWeight="SemiBold"
+                                            MaxLines="1"
+                                            Text="{x:Bind Title}"
+                                            TextTrimming="CharacterEllipsis" />
+                                        <TextBlock
+                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                            Text="{x:Bind Folder}"
+                                            TextTrimming="CharacterEllipsis" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="5">
+                                        <TextBlock
+                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                            Text="{x:Bind Branch}"
+                                            TextTrimming="CharacterEllipsis" />
+                                        <TextBlock
+                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                            Text="{x:Bind Provider}" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="2" MinWidth="104" VerticalAlignment="Center" Spacing="5">
+                                        <TextBlock
+                                            HorizontalAlignment="Right"
+                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                            Text="{x:Bind Source}" />
+                                        <StackPanel HorizontalAlignment="Right" Orientation="Horizontal" Spacing="6">
+                                            <TextBlock
+                                                Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                                                Text="{x:Bind Environment}" />
+                                            <TextBlock
+                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                Text="{x:Bind Recency}" />
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Grid>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+
+                    <StackPanel
+                        x:Name="EmptyStatePanel"
+                        Grid.RowSpan="2"
+                        MaxWidth="380"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Spacing="12"
+                        Visibility="Collapsed">
+                        <FontIcon HorizontalAlignment="Center" FontSize="38" Glyph="&#xE8F1;" />
+                        <TextBlock
+                            HorizontalAlignment="Center"
+                            Style="{ThemeResource SubtitleTextBlockStyle}"
+                            Text="No sessions to show" />
+                        <TextBlock
+                            HorizontalAlignment="Center"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Text="{Binding StatusMessage}"
+                            TextAlignment="Center"
+                            TextWrapping="Wrap" />
+                        <Button HorizontalAlignment="Center" Click="OnRefreshClicked" Content="Try again" />
+                    </StackPanel>
+                </Grid>
+
+                <Rectangle
+                    Grid.Column="3"
+                    Fill="{ThemeResource DividerStrokeColorDefaultBrush}" />
+
+                <Grid
+                    x:Name="DetailPanel"
+                    Grid.Column="4"
+                    Padding="24,16,24,20"
+                    Background="{ThemeResource LayerFillColorAltBrush}">
+                    <StackPanel
+                        x:Name="NoSelectionPanel"
+                        MaxWidth="330"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Spacing="8">
+                        <FontIcon HorizontalAlignment="Center" FontSize="34" Glyph="&#xE8A5;" />
+                        <TextBlock
+                            HorizontalAlignment="Center"
+                            Style="{ThemeResource SubtitleTextBlockStyle}"
+                            Text="Select a session" />
+                        <TextBlock
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Text="Preview the latest exchange or resume the session in its original environment."
+                            TextAlignment="Center"
+                            TextWrapping="Wrap" />
+                    </StackPanel>
+
+                    <ScrollViewer
+                        x:Name="SelectedDetail"
+                        HorizontalScrollBarVisibility="Disabled"
+                        VerticalScrollBarVisibility="Auto"
+                        Visibility="Collapsed">
+                        <StackPanel Spacing="14">
+                            <Button
+                                x:Name="BackButton"
+                                HorizontalAlignment="Left"
+                                Click="OnBackClicked"
+                                Visibility="Collapsed">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <SymbolIcon Symbol="Back" />
+                                    <TextBlock Text="Agent Sessions" />
+                                </StackPanel>
+                            </Button>
+
+                            <StackPanel Spacing="6">
+                                <TextBlock
+                                    FontSize="22"
+                                    FontWeight="SemiBold"
+                                    MaxLines="2"
+                                    Text="{Binding SelectedSession.Title}"
+                                    TextTrimming="CharacterEllipsis"
+                                    TextWrapping="Wrap" />
+                                <TextBlock
+                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                    Text="{Binding SelectedSession.Folder}"
+                                    TextTrimming="CharacterEllipsis" />
+                                <TextBlock
+                                    FontFamily="Consolas"
+                                    FontSize="12"
+                                    Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                                    Text="{Binding SelectedSession.WorkingDirectory}"
+                                    TextTrimming="CharacterEllipsis" />
+                                <StackPanel Orientation="Horizontal" Spacing="7">
+                                    <TextBlock Text="{Binding SelectedSession.Provider}" />
+                                    <TextBlock Foreground="{ThemeResource TextFillColorTertiaryBrush}" Text="•" />
+                                    <TextBlock Text="{Binding SelectedSession.Source}" />
+                                    <TextBlock Foreground="{ThemeResource TextFillColorTertiaryBrush}" Text="•" />
+                                    <TextBlock Text="{Binding SelectedSession.Environment}" />
+                                    <TextBlock Foreground="{ThemeResource TextFillColorTertiaryBrush}" Text="•" />
+                                    <TextBlock Text="{Binding SelectedSession.Recency}" />
+                                </StackPanel>
+                            </StackPanel>
+
+                            <Button
+                                HorizontalAlignment="Stretch"
+                                HorizontalContentAlignment="Center"
+                                Click="OnResumeClicked"
+                                Style="{ThemeResource AccentButtonStyle}">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <FontIcon Glyph="&#xE756;" />
+                                    <TextBlock Text="Resume in terminal" />
+                                </StackPanel>
+                            </Button>
+
+                            <CommandBar
+                                HorizontalAlignment="Stretch"
+                                Background="Transparent"
+                                DefaultLabelPosition="Right"
+                                IsDynamicOverflowEnabled="True">
+                                <AppBarButton
+                                    AutomationProperties.Name="Copy resume command"
+                                    Click="OnCopyCommandClicked"
+                                    Icon="Copy"
+                                    Label="Copy command" />
+                                <AppBarButton
+                                    AutomationProperties.Name="Copy session ID"
+                                    Click="OnCopySessionIdClicked"
+                                    Icon="Copy"
+                                    Label="Session ID" />
+                                <AppBarButton
+                                    x:Name="OpenFolderButton"
+                                    Click="OnOpenFolderClicked"
+                                    Icon="Folder"
+                                    Label="Open folder" />
+                            </CommandBar>
+
+                            <InfoBar
+                                x:Name="ActionInfoBar"
+                                IsOpen="False" />
+
+                            <Rectangle Height="1" Fill="{ThemeResource DividerStrokeColorDefaultBrush}" />
+
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Style="{ThemeResource BodyStrongTextBlockStyle}" Text="Recent conversation" />
+                                <ProgressRing
+                                    Grid.Column="1"
+                                    Width="22"
+                                    Height="22"
+                                    IsActive="{Binding IsPreviewLoading}" />
+                            </Grid>
+
+                            <InfoBar
+                                x:Name="PreviewUnavailableInfoBar"
+                                IsClosable="False"
+                                IsOpen="False"
+                                Severity="Informational" />
+
+                            <ItemsControl
+                                x:Name="PreviewMessages"
+                                ItemTemplateSelector="{StaticResource AgentSessionMessageTemplateSelector}"
+                                ItemsSource="{Binding Preview.Messages}" />
+                        </StackPanel>
+                    </ScrollViewer>
+                </Grid>
+            </Grid>
+        </Grid>
+    </Grid>
+</Page>

@@ -21,3 +21,16 @@ Openza Flow depends on third-party packages and platform components. This file s
 ## Project-owned assets
 
 Project-created screenshots are available under the repository's MIT License. Openza names, logos, and official app icons are reserved as described in [BRAND.md](BRAND.md).
+
+## External integrations
+
+Openza Flow interoperates with software and services that are not bundled with the app:
+
+| Product or service | Provider | Use |
+| --- | --- | --- |
+| Codex CLI | OpenAI | Local agent-session discovery, preview, and resume |
+| GitHub | GitHub, Inc. | Optional authentication and read-only developer activity |
+| Windows Terminal | Microsoft | Launching resumed sessions |
+| Windows Subsystem for Linux | Microsoft | Discovering and resuming Linux-hosted sessions |
+
+These products and services remain subject to their providers' licenses, terms, privacy policies, and trademark rules. Openza Flow is an independent open-source project and is not affiliated with or endorsed by OpenAI, GitHub, or Microsoft.

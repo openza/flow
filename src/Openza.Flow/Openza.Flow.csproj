@@ -58,7 +58,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="Assets\*.png" />
+    <Content Include="Assets\*.png" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="Assets\*.ico" CopyToOutputDirectory="PreserveNewest" />
     <None Include="Package.appxmanifest" />
     <None Include="Package.Dev.appxmanifest" />

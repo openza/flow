@@ -9,27 +9,39 @@ public sealed class RepositoryActivityListItem
 {
     public RepositoryActivityListItem(GithubRelease release)
     {
+        IsRelease = true;
         Title = string.IsNullOrWhiteSpace(release.Name) ? release.TagName : release.Name;
         HtmlUrl = release.HtmlUrl;
         Repository = release.Repository.FullName;
+        Tag = release.TagName;
+        Author = string.IsNullOrWhiteSpace(release.Author) ? "Unknown" : release.Author;
+        Type = release.Draft ? "Draft" : release.Prerelease ? "Prerelease" : "Release";
         PrimaryDetail = release.TagName;
         SecondaryDetail = string.IsNullOrWhiteSpace(release.Author) ? "Release" : $"by {release.Author}";
         TimestampText = FormatRelative(release.SortTimestamp);
-        Badge = release.Draft ? "Draft" : release.Prerelease ? "Prerelease" : "Release";
+        Badge = Type;
         SecondaryBadge = release.Draft && release.Prerelease ? "Prerelease" : string.Empty;
+        ViewActionText = "View release";
         ApplyStatusBrushes();
     }
 
     public RepositoryActivityListItem(GithubWorkflowRun run)
     {
+        IsWorkflowRun = true;
         Title = string.IsNullOrWhiteSpace(run.DisplayTitle) ? run.WorkflowName : run.DisplayTitle;
         HtmlUrl = run.HtmlUrl;
         Repository = run.Repository.FullName;
+        Workflow = string.IsNullOrWhiteSpace(run.WorkflowName) ? $"Run #{run.RunNumber}" : run.WorkflowName;
+        Trigger = Humanize(run.Event);
+        Branch = run.Branch;
+        Conclusion = string.IsNullOrWhiteSpace(run.Conclusion) ? Humanize(run.Status) : Humanize(run.Conclusion);
+        Status = Humanize(run.Status);
         PrimaryDetail = string.IsNullOrWhiteSpace(run.WorkflowName) ? $"Run #{run.RunNumber}" : $"{run.WorkflowName} #{run.RunNumber}";
         SecondaryDetail = $"{run.Branch} / {run.Event}";
         TimestampText = FormatRelative(run.CreatedAt);
         Badge = string.IsNullOrWhiteSpace(run.Conclusion) ? run.Status : run.Conclusion;
         SecondaryBadge = run.Status;
+        ViewActionText = "View run";
         ApplyStatusBrushes();
     }
 
@@ -38,6 +50,30 @@ public sealed class RepositoryActivityListItem
     public string HtmlUrl { get; }
 
     public string Repository { get; }
+
+    public bool IsRelease { get; }
+
+    public bool IsWorkflowRun { get; }
+
+    public Visibility ReleaseVisibility => IsRelease ? Visibility.Visible : Visibility.Collapsed;
+
+    public Visibility WorkflowRunVisibility => IsWorkflowRun ? Visibility.Visible : Visibility.Collapsed;
+
+    public string Tag { get; } = string.Empty;
+
+    public string Author { get; } = string.Empty;
+
+    public string Type { get; } = string.Empty;
+
+    public string Workflow { get; } = string.Empty;
+
+    public string Trigger { get; } = string.Empty;
+
+    public string Branch { get; } = string.Empty;
+
+    public string Conclusion { get; } = string.Empty;
+
+    public string Status { get; } = string.Empty;
 
     public string PrimaryDetail { get; }
 
@@ -48,6 +84,8 @@ public sealed class RepositoryActivityListItem
     public string Badge { get; }
 
     public string SecondaryBadge { get; }
+
+    public string ViewActionText { get; }
 
     public Visibility SecondaryBadgeVisibility => string.IsNullOrWhiteSpace(SecondaryBadge)
         || string.Equals(Badge, SecondaryBadge, StringComparison.OrdinalIgnoreCase)
@@ -128,4 +166,10 @@ public sealed class RepositoryActivityListItem
 
         return timestamp.ToString("MMM d");
     }
+
+    private static string Humanize(string value) =>
+        string.IsNullOrWhiteSpace(value)
+            ? "Unknown"
+            : string.Join(' ', value.Split('_', StringSplitOptions.RemoveEmptyEntries)
+                .Select(part => char.ToUpperInvariant(part[0]) + part[1..]));
 }

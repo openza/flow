@@ -113,6 +113,33 @@ public sealed class GitHubRepositoryActivityServiceTests
         Assert.Equal(502, result.Items[0].RunNumber);
     }
 
+    [Fact]
+    public async Task AllOrganizationsUsesAuthenticatedOrganizationRepositories()
+    {
+        var tokenStore = new InMemoryTokenStore();
+        await tokenStore.SaveTokenAsync("token");
+        Uri? repositoryRequest = null;
+        var service = new GitHubRepositoryActivityService(
+            new HttpClient(new StubHandler(request =>
+            {
+                if (request.RequestUri?.AbsolutePath == "/user/repos")
+                {
+                    repositoryRequest = request.RequestUri;
+                    return Json("[]");
+                }
+
+                return new HttpResponseMessage(HttpStatusCode.NotFound);
+            })),
+            tokenStore);
+
+        var result = await service.GetRecentReleasesAsync(null);
+
+        Assert.Empty(result.Items);
+        Assert.NotNull(repositoryRequest);
+        Assert.Contains("affiliation=organization_member", repositoryRequest.Query);
+        Assert.Contains("visibility=all", repositoryRequest.Query);
+    }
+
     private static HttpResponseMessage ReleaseResponse(HttpRequestMessage request)
     {
         var path = request.RequestUri?.AbsolutePath ?? string.Empty;

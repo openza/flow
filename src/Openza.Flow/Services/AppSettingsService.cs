@@ -1,14 +1,18 @@
 using Windows.ApplicationModel;
 using Windows.Storage;
+using Openza.Flow.Core.Models;
+using Openza.Flow.Core.Services;
 
 namespace Openza.Flow.Services;
 
-public sealed class AppSettingsService
+public sealed class AppSettingsService : IAgentEnvironmentEnablement
 {
     private const string RunInBackgroundKey = "run_in_background";
     private const string NotificationsEnabledKey = "notifications_enabled";
     private const string SelectedOrganizationKey = "selected_organization";
     private const string ThemeKey = "theme";
+    private const string DisabledAgentEnvironmentsKey = "disabled_agent_environments";
+    private const string TerminalLaunchModeKey = "terminal_launch_mode";
     private readonly ApplicationDataContainer _settings = ApplicationData.Current.LocalSettings;
 
     public bool RunInBackground
@@ -43,6 +47,47 @@ public sealed class AppSettingsService
                 _settings.Values[SelectedOrganizationKey] = value;
             }
         }
+    }
+
+    public IReadOnlySet<string> DisabledAgentEnvironmentIds
+    {
+        get
+        {
+            var serialized = _settings.Values.TryGetValue(DisabledAgentEnvironmentsKey, out var value) ? value as string : null;
+            return string.IsNullOrWhiteSpace(serialized)
+                ? new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+                : serialized.Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                    .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        }
+        set => _settings.Values[DisabledAgentEnvironmentsKey] = string.Join('|', value.Order(StringComparer.OrdinalIgnoreCase));
+    }
+
+    public TerminalLaunchMode TerminalLaunchMode
+    {
+        get => _settings.Values.TryGetValue(TerminalLaunchModeKey, out var value)
+            && value is string text
+            && Enum.TryParse<TerminalLaunchMode>(text, ignoreCase: true, out var mode)
+                ? mode
+                : TerminalLaunchMode.NewTab;
+        set => _settings.Values[TerminalLaunchModeKey] = value.ToString();
+    }
+
+    public bool IsAgentEnvironmentEnabled(string environmentId) =>
+        !DisabledAgentEnvironmentIds.Contains(environmentId);
+
+    public void SetAgentEnvironmentEnabled(string environmentId, bool enabled)
+    {
+        var disabled = DisabledAgentEnvironmentIds.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        if (enabled)
+        {
+            disabled.Remove(environmentId);
+        }
+        else
+        {
+            disabled.Add(environmentId);
+        }
+
+        DisabledAgentEnvironmentIds = disabled;
     }
 
     public async Task<bool> GetStartWithWindowsAsync()

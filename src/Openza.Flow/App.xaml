@@ -8,6 +8,11 @@
             <ResourceDictionary.MergedDictionaries>
                 <controls:XamlControlsResources />
             </ResourceDictionary.MergedDictionaries>
+            <x:String x:Key="AgentSessionsGlyph">&#xE99A;</x:String>
+            <x:String x:Key="GitHubGlyph">&#xE943;</x:String>
+            <x:String x:Key="PullRequestGlyph">&#xEA3C;</x:String>
+            <x:String x:Key="ReleaseGlyph">&#xE8EC;</x:String>
+            <x:String x:Key="WorkflowRunGlyph">&#xE945;</x:String>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

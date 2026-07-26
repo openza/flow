@@ -2,6 +2,7 @@ using Openza.Flow.Core.Models;
 using Microsoft.UI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Media.Imaging;
 
 namespace Openza.Flow.ViewModels;
 
@@ -15,7 +16,7 @@ public sealed class PrListItem
         HtmlUrl = pullRequest.HtmlUrl;
         Repository = pullRequest.Repository.FullName;
         Author = pullRequest.Author.Login;
-        AuthorAvatarUrl = pullRequest.Author.AvatarUrl;
+        AuthorAvatarSource = CreateAvatarSource(pullRequest.Author.AvatarUrl);
         UpdatedText = $"Updated {FormatRelative(pullRequest.UpdatedAt)}";
         Detail = $"{pullRequest.HeadRefName} -> {pullRequest.BaseRefName}";
         Badge = pullRequest.Draft ? "Draft" : "Open";
@@ -33,7 +34,7 @@ public sealed class PrListItem
         HtmlUrl = pullRequest.HtmlUrl;
         Repository = pullRequest.Repository.FullName;
         Author = pullRequest.Author.Login;
-        AuthorAvatarUrl = pullRequest.Author.AvatarUrl;
+        AuthorAvatarSource = CreateAvatarSource(pullRequest.Author.AvatarUrl);
         UpdatedText = $"Reviewed {FormatRelative(pullRequest.ReviewedAt)}";
         Detail = $"{pullRequest.HeadRefName} -> {pullRequest.BaseRefName}";
         Badge = pullRequest.ReviewState switch
@@ -61,7 +62,7 @@ public sealed class PrListItem
         HtmlUrl = pullRequest.HtmlUrl;
         Repository = pullRequest.Repository.FullName;
         Author = "You";
-        AuthorAvatarUrl = string.Empty;
+        AuthorAvatarSource = null;
         UpdatedText = $"Created {FormatRelative(pullRequest.CreatedAt)}";
         Detail = $"{pullRequest.HeadRefName} -> {pullRequest.BaseRefName}";
         Badge = pullRequest.MergeState switch
@@ -87,7 +88,7 @@ public sealed class PrListItem
 
     public string Author { get; }
 
-    public string AuthorAvatarUrl { get; }
+    public ImageSource? AuthorAvatarSource { get; }
 
     public string UpdatedText { get; }
 
@@ -112,6 +113,9 @@ public sealed class PrListItem
     public Brush BadgeBackground { get; private set; } = Brush("#eef2f6");
 
     public Brush BadgeBorder { get; private set; } = Brush("#cbd5e1");
+
+    private static ImageSource? CreateAvatarSource(string? value) =>
+        Uri.TryCreate(value, UriKind.Absolute, out var uri) ? new BitmapImage(uri) : null;
 
     public Brush BadgeForeground { get; private set; } = Brush("#334155");
 
