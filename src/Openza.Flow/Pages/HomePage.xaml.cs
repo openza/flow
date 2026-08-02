@@ -147,9 +147,19 @@ public sealed partial class HomePage : Page
 
     private async void OnOpenAttentionClicked(object sender, RoutedEventArgs e)
     {
-        if (sender is Button { Tag: string url } && Uri.TryCreate(url, UriKind.Absolute, out var uri))
+        if (sender is not Button { Tag: string url } || !Uri.TryCreate(url, UriKind.Absolute, out var uri))
+        {
+            return;
+        }
+
+        try
         {
             await Windows.System.Launcher.LaunchUriAsync(uri);
+        }
+        catch (Exception exception)
+        {
+            AppLog.Write(exception);
+            ShowActionMessage("The link could not be opened.");
         }
     }
 

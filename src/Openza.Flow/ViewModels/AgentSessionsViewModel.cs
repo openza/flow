@@ -217,25 +217,34 @@ public sealed class AgentSessionsViewModel : ObservableObject
     public void RestoreSnapshotPresentation()
     {
         RebuildFilterOptions();
-        if (SelectedAgentId is not null
-            && AgentFilters.All(option => !string.Equals(option.Id, SelectedAgentId, StringComparison.OrdinalIgnoreCase)))
+        var wasSuppressed = _suppressFilterApplication;
+        _suppressFilterApplication = true;
+        try
         {
-            SelectedAgentId = null;
+            if (SelectedAgentId is not null
+                && AgentFilters.All(option => !string.Equals(option.Id, SelectedAgentId, StringComparison.OrdinalIgnoreCase)))
+            {
+                SelectedAgentId = null;
+            }
+
+            if (SelectedEnvironmentId is not null
+                && EnvironmentFilters.All(option => !string.Equals(option.Id, SelectedEnvironmentId, StringComparison.OrdinalIgnoreCase)))
+            {
+                SelectedEnvironmentId = null;
+            }
+
+            if (SelectedSource is not null
+                && SourceFilters.All(option => !string.Equals(option.Id, SelectedSource, StringComparison.OrdinalIgnoreCase)))
+            {
+                SelectedSource = null;
+            }
+        }
+        finally
+        {
+            _suppressFilterApplication = wasSuppressed;
         }
 
-        if (SelectedEnvironmentId is not null
-            && EnvironmentFilters.All(option => !string.Equals(option.Id, SelectedEnvironmentId, StringComparison.OrdinalIgnoreCase)))
-        {
-            SelectedEnvironmentId = null;
-        }
-
-        if (SelectedSource is not null
-            && SourceFilters.All(option => !string.Equals(option.Id, SelectedSource, StringComparison.OrdinalIgnoreCase)))
-        {
-            SelectedSource = null;
-        }
-
-        ApplyFilters();
+        ApplyFiltersUnlessSuppressed();
     }
 
     public async Task RefreshAsync(bool preserveExisting = true, CancellationToken cancellationToken = default)
@@ -389,7 +398,8 @@ public sealed class AgentSessionsViewModel : ObservableObject
                  .OrderBy(group => ProviderDisplayName(group.Key), StringComparer.OrdinalIgnoreCase)
                  .Select(group => new AgentSessionFilterOption(group.Key, ProviderDisplayName(group.Key), group.Count()))]);
 
-        ReplaceEnvironmentFilters(
+        ReplaceFilterOptions(
+            EnvironmentFilters,
             [new(null, "All environments", _allSessions.Count),
              .. enabled.Select(environment => new AgentEnvironmentFilterOption(
                  environment.Id,
@@ -406,9 +416,10 @@ public sealed class AgentSessionsViewModel : ObservableObject
                  .Select(group => new AgentSessionFilterOption(group.Key, group.Key, group.Count()))]);
     }
 
-    private static void ReplaceFilterOptions(
-        ObservableCollection<AgentSessionFilterOption> target,
-        IReadOnlyList<AgentSessionFilterOption> options)
+    private static void ReplaceFilterOptions<TOption>(
+        ObservableCollection<TOption> target,
+        IReadOnlyList<TOption> options)
+        where TOption : IAgentSessionFilterOption
     {
         for (var index = 0; index < options.Count; index++)
         {
@@ -431,32 +442,6 @@ public sealed class AgentSessionsViewModel : ObservableObject
         while (target.Count > options.Count)
         {
             target.RemoveAt(target.Count - 1);
-        }
-    }
-
-    private void ReplaceEnvironmentFilters(IReadOnlyList<AgentEnvironmentFilterOption> options)
-    {
-        for (var index = 0; index < options.Count; index++)
-        {
-            var replacement = options[index];
-            var existingIndex = IndexOf(EnvironmentFilters, replacement.Id);
-            if (existingIndex < 0)
-            {
-                EnvironmentFilters.Insert(index, replacement);
-                continue;
-            }
-
-            if (existingIndex != index)
-            {
-                EnvironmentFilters.Move(existingIndex, index);
-            }
-
-            EnvironmentFilters[index].Update(replacement.DisplayName, replacement.Count);
-        }
-
-        while (EnvironmentFilters.Count > options.Count)
-        {
-            EnvironmentFilters.RemoveAt(EnvironmentFilters.Count - 1);
         }
     }
 
@@ -645,6 +630,12 @@ public sealed class AgentSessionGroup(string title, string? subtitle, IEnumerabl
 public interface IAgentSessionFilterOption
 {
     string? Id { get; }
+
+    string DisplayName { get; }
+
+    int Count { get; }
+
+    void Update(string displayName, int count);
 }
 
 public sealed class AgentEnvironmentFilterOption(string? id, string displayName, int count)

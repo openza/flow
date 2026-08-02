@@ -12,17 +12,53 @@ public sealed class CodexAppServerException(string category, string message, Exc
     public string Category { get; } = category;
 }
 
+internal sealed class AsyncInitializationGate : IDisposable
+{
+    private readonly SemaphoreSlim _gate = new(1, 1);
+    private int _initialized;
+
+    public bool IsInitialized => Volatile.Read(ref _initialized) != 0;
+
+    public async Task EnsureInitializedAsync(
+        Func<CancellationToken, Task> initializeAsync,
+        CancellationToken cancellationToken)
+    {
+        if (Volatile.Read(ref _initialized) != 0)
+        {
+            return;
+        }
+
+        await _gate.WaitAsync(cancellationToken);
+        try
+        {
+            if (_initialized != 0)
+            {
+                return;
+            }
+
+            await initializeAsync(cancellationToken);
+            Volatile.Write(ref _initialized, 1);
+        }
+        finally
+        {
+            _gate.Release();
+        }
+    }
+
+    public void Dispose() => _gate.Dispose();
+}
+
 public sealed class CodexAppServerClient : ICodexAppServerClient
 {
     private static readonly TimeSpan RequestTimeout = TimeSpan.FromSeconds(20);
     private readonly ConcurrentDictionary<long, TaskCompletionSource<JsonElement>> _pending = new();
     private readonly SemaphoreSlim _writeGate = new(1, 1);
+    private readonly AsyncInitializationGate _initializationGate = new();
     private readonly Process _process;
     private readonly CancellationTokenSource _lifetime = new();
     private readonly Task _readTask;
     private readonly Task _stderrTask;
     private long _nextRequestId;
-    private bool _initialized;
     private int _disposeState;
 
     public CodexAppServerClient(AgentEnvironment environment)
@@ -58,29 +94,26 @@ public sealed class CodexAppServerClient : ICodexAppServerClient
 
     public AgentEnvironment Environment { get; }
 
-    public async Task InitializeAsync(CancellationToken cancellationToken = default)
-    {
-        if (_initialized)
-        {
-            return;
-        }
-
-        await RequestAsync(
-            "initialize",
-            new JsonObject
+    public Task InitializeAsync(CancellationToken cancellationToken = default) =>
+        _initializationGate.EnsureInitializedAsync(
+            async token =>
             {
-                ["clientInfo"] = new JsonObject
-                {
-                    ["name"] = "openza-flow",
-                    ["title"] = "Openza Flow",
-                    ["version"] = "1.0.0"
-                },
-                ["capabilities"] = new JsonObject { ["experimentalApi"] = true }
+                await RequestAsync(
+                    "initialize",
+                    new JsonObject
+                    {
+                        ["clientInfo"] = new JsonObject
+                        {
+                            ["name"] = "openza-flow",
+                            ["title"] = "Openza Flow",
+                            ["version"] = "1.0.0"
+                        },
+                        ["capabilities"] = new JsonObject { ["experimentalApi"] = true }
+                    },
+                    token);
+                await SendNotificationAsync("initialized", new JsonObject(), token);
             },
             cancellationToken);
-        await SendNotificationAsync("initialized", new JsonObject(), cancellationToken);
-        _initialized = true;
-    }
 
     public async Task<CodexSessionListPage> ListSessionsAsync(string? cursor, int limit, CancellationToken cancellationToken = default)
     {
@@ -162,6 +195,7 @@ public sealed class CodexAppServerClient : ICodexAppServerClient
         }
 
         _process.Dispose();
+        _initializationGate.Dispose();
         _writeGate.Dispose();
         _lifetime.Dispose();
     }
@@ -169,6 +203,7 @@ public sealed class CodexAppServerClient : ICodexAppServerClient
     private void CleanupFailedStart()
     {
         _process.Dispose();
+        _initializationGate.Dispose();
         _writeGate.Dispose();
         _lifetime.Dispose();
     }
@@ -554,7 +589,7 @@ public sealed class CodexAppServerClient : ICodexAppServerClient
 
     private void EnsureInitialized()
     {
-        if (!_initialized)
+        if (!_initializationGate.IsInitialized)
         {
             throw new InvalidOperationException("Initialize the app-server client before sending requests.");
         }

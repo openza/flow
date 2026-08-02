@@ -187,11 +187,12 @@ public sealed partial class MainWindow : Window
     {
         _homePage.ViewSessionsRequested += (_, _) => SelectNavigation(SessionsNavigationItem);
         _homePage.ViewActivityRequested += (_, _) => SelectNavigation(PullRequestsNavigationItem);
-        _homePage.RefreshGitHubRequested += async (_, _) => await _activityPage.RefreshReviewRequestsForHomeAsync();
-        _homePage.SessionRequested += async (_, key) =>
+        _homePage.RefreshGitHubRequested += (_, _) =>
+            _ = ObserveAsync(_activityPage.RefreshReviewRequestsForHomeAsync());
+        _homePage.SessionRequested += (_, key) =>
         {
             SelectNavigation(SessionsNavigationItem);
-            await _sessionsPage.SelectSessionAsync(key);
+            _ = ObserveAsync(_sessionsPage.SelectSessionAsync(key));
         };
         _homePage.ProjectRequested += (_, project) =>
         {
@@ -216,30 +217,40 @@ public sealed partial class MainWindow : Window
         NavigationView sender,
         NavigationViewSelectionChangedEventArgs args)
     {
-        if (_navigating)
+        try
         {
-            return;
-        }
+            if (_navigating)
+            {
+                return;
+            }
 
-        if (args.IsSettingsSelected)
-        {
-            await NavigateAsync(ShellPage.Settings);
-            return;
-        }
+            if (args.IsSettingsSelected)
+            {
+                await NavigateAsync(ShellPage.Settings);
+                return;
+            }
 
-        if (args.SelectedItem is not NavigationViewItem item)
-        {
-            return;
-        }
+            if (args.SelectedItem is not NavigationViewItem item)
+            {
+                return;
+            }
 
-        await NavigateAsync((item.Tag as string) switch
+            await NavigateAsync((item.Tag as string) switch
+            {
+                "sessions" => ShellPage.Sessions,
+                "pull-requests" => ShellPage.PullRequests,
+                "releases" => ShellPage.Releases,
+                "workflow-runs" => ShellPage.WorkflowRuns,
+                _ => ShellPage.Home
+            });
+        }
+        catch (OperationCanceledException)
         {
-            "sessions" => ShellPage.Sessions,
-            "pull-requests" => ShellPage.PullRequests,
-            "releases" => ShellPage.Releases,
-            "workflow-runs" => ShellPage.WorkflowRuns,
-            _ => ShellPage.Home
-        });
+        }
+        catch (Exception exception)
+        {
+            AppLog.Write(exception);
+        }
     }
 
     private Task NavigateAsync(ShellPage page)

@@ -8,6 +8,32 @@ namespace Openza.Flow.Tests;
 public sealed class CodexAppServerParsingTests
 {
     [Fact]
+    public async Task InitializationGateRunsInitializerOnceForConcurrentCallers()
+    {
+        using var gate = new AsyncInitializationGate();
+        var entered = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var release = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var callCount = 0;
+
+        async Task Initialize(CancellationToken cancellationToken)
+        {
+            Interlocked.Increment(ref callCount);
+            entered.TrySetResult(true);
+            await release.Task.WaitAsync(cancellationToken);
+        }
+
+        var first = gate.EnsureInitializedAsync(Initialize, CancellationToken.None);
+        await entered.Task;
+        var concurrent = Enumerable.Range(0, 7)
+            .Select(_ => gate.EnsureInitializedAsync(Initialize, CancellationToken.None))
+            .ToList();
+        release.SetResult(true);
+
+        await Task.WhenAll([first, .. concurrent]);
+        Assert.Equal(1, callCount);
+    }
+
+    [Fact]
     public void NonProtocolStdoutLineIsIgnored()
     {
         Assert.False(CodexAppServerClient.TryParseResponseLine("Codex starting…", out _));
