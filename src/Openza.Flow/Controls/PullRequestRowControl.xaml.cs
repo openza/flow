@@ -80,6 +80,10 @@ public sealed partial class PullRequestRowControl : UserControl
 
     public Visibility AuthorVisibility => ShowAuthor ? Visibility.Visible : Visibility.Collapsed;
 
+    public Visibility NormalVisibility => IsCompact ? Visibility.Collapsed : Visibility.Visible;
+
+    public Visibility CompactVisibility => IsCompact ? Visibility.Visible : Visibility.Collapsed;
+
     private static void OnLayoutPropertyChanged(DependencyObject dependencyObject, DependencyPropertyChangedEventArgs args)
     {
         ((PullRequestRowControl)dependencyObject).UpdateLayoutProperties();

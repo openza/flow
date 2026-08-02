@@ -34,9 +34,14 @@ public partial class App : Application
         var cachePath = Path.Combine(ApplicationData.Current.LocalFolder.Path, "Cache");
         var cacheStore = new FileFlowCacheStore(cachePath);
         var settings = new AppSettingsService();
+        var commandRunner = new CommandRunner();
+        var environmentDiscovery = new CodexEnvironmentDiscoveryService(commandRunner);
+        var agentSessions = new CodexAgentSessionProvider(environmentDiscovery);
+        var terminalLauncher = new WindowsTerminalLauncher(commandRunner);
         var auth = new GitHubAuthService(_httpClient, tokenStore);
         var pullRequests = new GitHubPullRequestService(_httpClient, tokenStore);
         var repositoryActivity = new GitHubRepositoryActivityService(_httpClient, tokenStore);
+        var sessionWorkspace = new AgentSessionWorkspace(agentSessions, settings);
 
         _notifications = new FlowNotificationService();
         _notifications.NotificationActivated += (_, url) =>
@@ -66,12 +71,25 @@ public partial class App : Application
         };
 
         _tray = new TrayIconService("Assets\\app_icon.ico");
-        _window = new MainWindow(tokenStore, auth, pullRequests, repositoryActivity, cacheStore, settings, _backgroundRefresh, _tray, _notifications);
+        _window = new MainWindow(
+            tokenStore,
+            auth,
+            pullRequests,
+            repositoryActivity,
+            cacheStore,
+            settings,
+            _backgroundRefresh,
+            _tray,
+            _notifications,
+            sessionWorkspace,
+            terminalLauncher);
         _tray.OpenRequested += (_, _) => _window.ShowWindow();
         _tray.RefreshRequested += (_, _) => _ = DispatcherQueue.TryEnqueue(() => _ = _window.RefreshAsync());
         _tray.ExitRequested += (_, _) => _ = DispatcherQueue.TryEnqueue(() => _window.ExitApplication());
 
         _window.Activate();
+        _window.Maximize();
+        _ = DispatcherQueue.TryEnqueue(() => _window.Maximize());
         if (!string.IsNullOrWhiteSpace(launchNotificationUrl))
         {
             _ = DispatcherQueue.TryEnqueue(() =>

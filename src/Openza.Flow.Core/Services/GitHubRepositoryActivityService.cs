@@ -22,10 +22,10 @@ public sealed class GitHubRepositoryActivityService
     }
 
     public async Task<RepositoryActivityResult<GithubRelease>> GetRecentReleasesAsync(
-        string organization,
+        string? organization,
         CancellationToken cancellationToken = default)
     {
-        var repositories = await GetOrganizationRepositoriesAsync(organization, cancellationToken);
+        var repositories = await GetRepositoriesAsync(organization, cancellationToken);
         var result = await FetchPerRepositoryAsync(
             repositories,
             repository => GetRepositoryReleasesAsync(repository, cancellationToken),
@@ -40,10 +40,10 @@ public sealed class GitHubRepositoryActivityService
     }
 
     public async Task<RepositoryActivityResult<GithubWorkflowRun>> GetRecentWorkflowRunsAsync(
-        string organization,
+        string? organization,
         CancellationToken cancellationToken = default)
     {
-        var repositories = await GetOrganizationRepositoriesAsync(organization, cancellationToken);
+        var repositories = await GetRepositoriesAsync(organization, cancellationToken);
         var result = await FetchPerRepositoryAsync(
             repositories,
             repository => GetRepositoryWorkflowRunsAsync(repository, cancellationToken),
@@ -57,16 +57,13 @@ public sealed class GitHubRepositoryActivityService
         return result with { Items = items };
     }
 
-    private async Task<IReadOnlyList<GithubRepositorySummary>> GetOrganizationRepositoriesAsync(
-        string organization,
+    private async Task<IReadOnlyList<GithubRepositorySummary>> GetRepositoriesAsync(
+        string? organization,
         CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(organization))
-        {
-            return [];
-        }
-
-        var uri = $"{GitHubConstants.ApiBaseUrl}/orgs/{Uri.EscapeDataString(organization.Trim())}/repos?type=all&sort=pushed&direction=desc&per_page={RepositoryLimit}";
+        var uri = string.IsNullOrWhiteSpace(organization)
+            ? $"{GitHubConstants.ApiBaseUrl}/user/repos?affiliation=organization_member&visibility=all&sort=pushed&direction=desc&per_page={RepositoryLimit}"
+            : $"{GitHubConstants.ApiBaseUrl}/orgs/{Uri.EscapeDataString(organization.Trim())}/repos?type=all&sort=pushed&direction=desc&per_page={RepositoryLimit}";
         using var response = await SendRestAsync(uri, cancellationToken);
         var body = await response.Content.ReadAsStringAsync(cancellationToken);
 

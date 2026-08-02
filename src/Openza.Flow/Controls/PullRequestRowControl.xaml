@@ -3,146 +3,199 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <Border
-        Padding="{x:Bind RowPadding, Mode=OneTime}"
-        Background="{ThemeResource LayerFillColorDefaultBrush}"
+        Background="Transparent"
         BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
         BorderThickness="0,0,0,1"
-        CornerRadius="4"
         DoubleTapped="OnRowDoubleTapped">
         <Grid>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
+            <Grid
+                Padding="14,11"
+                ColumnSpacing="10"
+                Visibility="{x:Bind NormalVisibility, Mode=OneWay}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" MinWidth="54" />
+                    <ColumnDefinition Width="2.2*" MinWidth="120" />
+                    <ColumnDefinition Width="1.25*" MinWidth="85" />
+                    <ColumnDefinition Width="Auto" MinWidth="70" />
+                    <ColumnDefinition Width="Auto" MinWidth="80" />
+                    <ColumnDefinition Width="Auto" MinWidth="60" />
+                </Grid.ColumnDefinitions>
 
-            <Button
-                MinWidth="{x:Bind NumberButtonMinWidth, Mode=OneTime}"
-                Height="{x:Bind NumberButtonHeight, Mode=OneTime}"
-                Margin="{x:Bind NumberButtonMargin, Mode=OneTime}"
-                Padding="{x:Bind NumberButtonPadding, Mode=OneTime}"
-                VerticalAlignment="Top"
-                Background="#f6f8fa"
-                BorderBrush="#d0d7de"
-                BorderThickness="1"
-                Click="OnCopyNumberClicked"
-                CornerRadius="6"
-                AutomationProperties.Name="Copy pull request number"
-                ToolTipService.ToolTip="Copy pull request number">
-                <TextBlock
-                    HorizontalAlignment="Center"
-                    VerticalAlignment="Center"
-                    FontSize="{x:Bind NumberTextFontSize, Mode=OneTime}"
-                    FontWeight="SemiBold"
-                    Foreground="#0969da"
-                    Text="{Binding DisplayNumber}" />
-            </Button>
-
-            <StackPanel Grid.Column="1" Spacing="{x:Bind ContentSpacing, Mode=OneTime}">
-                <TextBlock
-                    FontSize="{x:Bind TitleFontSize, Mode=OneTime}"
-                    FontWeight="SemiBold"
-                    MaxLines="{x:Bind TitleMaxLines, Mode=OneTime}"
-                    Text="{Binding Title}"
-                    TextTrimming="CharacterEllipsis" />
-                <TextBlock
-                    FontSize="13"
-                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                    Text="{Binding Summary}"
-                    TextTrimming="CharacterEllipsis"
-                    Visibility="{x:Bind SummaryVisibility, Mode=OneTime}" />
-                <StackPanel
-                    Opacity="0.76"
-                    Orientation="Horizontal"
-                    Spacing="6">
-                    <Image
-                        Width="16"
-                        Height="16"
-                        Source="{Binding AuthorAvatarUrl}"
-                        Visibility="{x:Bind AuthorVisibility, Mode=OneTime}" />
+                <Button
+                    MinWidth="50"
+                    Height="30"
+                    Padding="9,0"
+                    VerticalAlignment="Top"
+                    AutomationProperties.Name="Copy pull request number"
+                    Background="{ThemeResource ControlFillColorSecondaryBrush}"
+                    BorderBrush="{ThemeResource ControlStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    Click="OnCopyNumberClicked"
+                    CornerRadius="6"
+                    ToolTipService.ToolTip="Copy pull request number">
                     <TextBlock
-                        FontSize="12"
-                        Foreground="{ThemeResource TextFillColorTertiaryBrush}"
-                        Text="{Binding Detail}"
+                        FontSize="13"
+                        FontWeight="SemiBold"
+                        Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                        Text="{Binding DisplayNumber}" />
+                </Button>
+
+                <StackPanel Grid.Column="1" Spacing="3">
+                    <TextBlock
+                        FontWeight="SemiBold"
+                        MaxLines="1"
+                        Text="{Binding Title}"
                         TextTrimming="CharacterEllipsis" />
                     <TextBlock
                         FontSize="12"
-                        Foreground="{ThemeResource TextFillColorTertiaryBrush}"
-                        Text="{Binding Author}"
-                        TextTrimming="CharacterEllipsis"
-                        Visibility="{x:Bind AuthorVisibility, Mode=OneTime}" />
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        Text="{Binding Detail}"
+                        TextTrimming="CharacterEllipsis" />
+                    <ItemsControl ItemsSource="{Binding Labels}" Visibility="{Binding LabelsVisibility}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Horizontal" Spacing="5" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border
+                                    Padding="7,2"
+                                    Background="{Binding Background}"
+                                    BorderBrush="{Binding Border}"
+                                    BorderThickness="1"
+                                    CornerRadius="9">
+                                    <TextBlock FontSize="10" Foreground="{Binding Foreground}" Text="{Binding Name}" />
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
                 </StackPanel>
-                <ItemsControl
-                    ItemsSource="{Binding Labels}"
-                    Visibility="{Binding LabelsVisibility}">
-                    <ItemsControl.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <StackPanel Orientation="Horizontal" Spacing="6" />
-                        </ItemsPanelTemplate>
-                    </ItemsControl.ItemsPanel>
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <Border
-                                Padding="7,2"
-                                Background="{Binding Background}"
-                                BorderBrush="{Binding Border}"
-                                BorderThickness="1"
-                                CornerRadius="10">
-                                <TextBlock
-                                    FontSize="10"
-                                    FontWeight="SemiBold"
-                                    Foreground="{Binding Foreground}"
-                                    Text="{Binding Name}"
-                                    TextTrimming="CharacterEllipsis" />
-                            </Border>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-                <StackPanel Orientation="Horizontal" Spacing="6">
+
+                <StackPanel Grid.Column="2" Spacing="3">
+                    <TextBlock
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        Text="{Binding Repository}"
+                        TextTrimming="CharacterEllipsis" />
+                    <StackPanel Orientation="Horizontal" Spacing="6" Visibility="{x:Bind AuthorVisibility, Mode=OneWay}">
+                        <Image Width="15" Height="15" Source="{Binding AuthorAvatarSource}" />
+                        <TextBlock
+                            FontSize="12"
+                            Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                            Text="{Binding Author}"
+                            TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                </StackPanel>
+
+                <StackPanel Grid.Column="3" VerticalAlignment="Center" Orientation="Horizontal" Spacing="5">
                     <Border
-                        Padding="{x:Bind BadgePadding, Mode=OneTime}"
+                        Padding="8,3"
+                        VerticalAlignment="Center"
                         Background="{Binding BadgeBackground}"
                         BorderBrush="{Binding BadgeBorder}"
                         BorderThickness="1"
                         CornerRadius="5">
-                        <TextBlock
-                            FontSize="12"
-                            FontWeight="SemiBold"
-                            Foreground="{Binding BadgeForeground}"
-                            Text="{Binding Badge}" />
+                        <TextBlock FontSize="12" FontWeight="SemiBold" Foreground="{Binding BadgeForeground}" Text="{Binding Badge}" />
                     </Border>
                     <Border
-                        Padding="{x:Bind BadgePadding, Mode=OneTime}"
+                        Padding="8,3"
+                        VerticalAlignment="Center"
                         Background="{Binding SecondaryBadgeBackground}"
                         BorderBrush="{Binding SecondaryBadgeBorder}"
                         BorderThickness="1"
                         CornerRadius="5"
                         Visibility="{Binding SecondaryBadgeVisibility}">
-                        <TextBlock
-                            FontSize="12"
-                            Foreground="{Binding SecondaryBadgeForeground}"
-                            Text="{Binding SecondaryBadge}" />
+                        <TextBlock FontSize="12" Foreground="{Binding SecondaryBadgeForeground}" Text="{Binding SecondaryBadge}" />
                     </Border>
+                </StackPanel>
+
+                <TextBlock
+                    Grid.Column="4"
+                    VerticalAlignment="Center"
+                    FontSize="12"
+                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                    Text="{Binding UpdatedText}" />
+
+                <Button
+                    Grid.Column="5"
+                    MinWidth="60"
+                    MinHeight="30"
+                    VerticalAlignment="Center"
+                    AutomationProperties.Name="View pull request on GitHub"
+                    Click="OnOpenClicked"
+                    Content="View"
+                    ToolTipService.ToolTip="View pull request on GitHub" />
+            </Grid>
+
+            <Grid
+                Padding="10"
+                ColumnSpacing="10"
+                Visibility="{x:Bind CompactVisibility, Mode=OneWay}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <Button
+                    MinWidth="0"
+                    Height="23"
+                    Padding="7,0"
+                    VerticalAlignment="Top"
+                    AutomationProperties.Name="Copy pull request number"
+                    Background="{ThemeResource ControlFillColorSecondaryBrush}"
+                    BorderBrush="{ThemeResource ControlStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    Click="OnCopyNumberClicked"
+                    CornerRadius="6"
+                    ToolTipService.ToolTip="Copy pull request number">
                     <TextBlock
-                        VerticalAlignment="Center"
+                        FontSize="12"
+                        FontWeight="SemiBold"
+                        Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                        Text="{Binding DisplayNumber}" />
+                </Button>
+                <StackPanel Grid.Column="1" Spacing="4">
+                    <TextBlock FontSize="13" FontWeight="SemiBold" MaxLines="1" Text="{Binding Title}" TextTrimming="CharacterEllipsis" />
+                    <TextBlock
                         FontSize="12"
                         Foreground="{ThemeResource TextFillColorTertiaryBrush}"
-                        Text="{Binding UpdatedText}" />
+                        Text="{Binding Detail}"
+                        TextTrimming="CharacterEllipsis" />
+                    <StackPanel Orientation="Horizontal" Spacing="5">
+                        <Border
+                            Padding="7,2"
+                            Background="{Binding BadgeBackground}"
+                            BorderBrush="{Binding BadgeBorder}"
+                            BorderThickness="1"
+                            CornerRadius="5">
+                            <TextBlock FontSize="11" Foreground="{Binding BadgeForeground}" Text="{Binding Badge}" />
+                        </Border>
+                        <Border
+                            Padding="7,2"
+                            Background="{Binding SecondaryBadgeBackground}"
+                            BorderBrush="{Binding SecondaryBadgeBorder}"
+                            BorderThickness="1"
+                            CornerRadius="5"
+                            Visibility="{Binding SecondaryBadgeVisibility}">
+                            <TextBlock FontSize="11" Foreground="{Binding SecondaryBadgeForeground}" Text="{Binding SecondaryBadge}" />
+                        </Border>
+                        <TextBlock
+                            VerticalAlignment="Center"
+                            FontSize="11"
+                            Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                            Text="{Binding UpdatedText}" />
+                    </StackPanel>
                 </StackPanel>
-            </StackPanel>
-
-            <Button
-                Grid.Column="2"
-                Width="32"
-                Height="28"
-                Margin="8,0,0,0"
-                Padding="0"
-                VerticalAlignment="Top"
-                AutomationProperties.Name="Open pull request in browser"
-                Click="OnOpenClicked"
-                ToolTipService.ToolTip="Open pull request in browser">
-                <SymbolIcon Symbol="OpenFile" />
-            </Button>
+                <Button
+                    Grid.Column="2"
+                    MinWidth="64"
+                    MinHeight="30"
+                    VerticalAlignment="Top"
+                    AutomationProperties.Name="View pull request on GitHub"
+                    Click="OnOpenClicked"
+                    Content="View"
+                    ToolTipService.ToolTip="View pull request on GitHub" />
+            </Grid>
         </Grid>
     </Border>
 </UserControl>

@@ -5,6 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - Unreleased
+
+### Added
+- Local-first Home dashboard for recent agent work, environment status, and optional GitHub items needing attention.
+- Unified Agent Sessions history from native Windows and Codex-enabled WSL distributions.
+- Search, environment filters, date or repository/folder grouping, incremental loading, and short on-demand conversation previews.
+- Safe session resume in Windows Terminal using the original environment and working directory.
+- Agent-environment enablement and terminal launch preferences in Settings.
+
+### Changed
+- Repositioned Flow as a Windows developer companion with Agent Sessions as its primary local workflow.
+- Made Home the default page and kept local features available without GitHub sign-in.
+- Reorganized GitHub functionality under clear Pull Requests, Releases, and Workflow Runs navigation.
+- Improved page loading, cancellation, responsiveness, empty states, and visual consistency across the app.
+- Updated application identity assets, About information, documentation, privacy disclosures, and Store metadata.
+
+### Fixed
+- Prevented rapid GitHub navigation from leaving stale or blank release and workflow views.
+- Prevented repeated full session-list reconstruction while Codex history is paginating.
+- Fixed WSL discovery, environment refresh, Windows npm Codex resolution, and terminal argument safety edge cases.
+
+## [1.0.0] - 2026-07-21
+
+### Changed
+- Published the WinUI 3 application as the first stable Microsoft Store release.
+- Finalized the Store package identity, separate development identity, application icons, privacy information, and support links.
+
 ## [0.3.0] - 2026-05-09
 
 ### Changed

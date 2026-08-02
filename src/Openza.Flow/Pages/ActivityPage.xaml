@@ -1,0 +1,462 @@
+<Page
+    x:Name="ActivityPageRoot"
+    x:Class="Openza.Flow.Pages.ActivityPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:Openza.Flow.Controls"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    HorizontalContentAlignment="Stretch"
+    mc:Ignorable="d">
+    <Page.Resources>
+        <Style x:Key="ActivitySurfaceStyle" TargetType="Border">
+            <Setter Property="Background" Value="{ThemeResource CardBackgroundFillColorDefaultBrush}" />
+            <Setter Property="BorderBrush" Value="{ThemeResource CardStrokeColorDefaultBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="8" />
+        </Style>
+    </Page.Resources>
+
+    <Grid HorizontalAlignment="Stretch">
+        <Grid
+            x:Name="AuthView"
+            MaxWidth="620"
+            Padding="28"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center"
+            Visibility="Collapsed">
+            <Border Padding="24" Style="{StaticResource ActivitySurfaceStyle}">
+                <StackPanel Spacing="14">
+                    <FontIcon HorizontalAlignment="Center" FontSize="38" Glyph="&#xE8A7;" />
+                    <TextBlock HorizontalAlignment="Center" Style="{ThemeResource TitleTextBlockStyle}" Text="Connect GitHub" />
+                    <TextBlock
+                        HorizontalAlignment="Center"
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        Text="GitHub is optional. Connect it to see review requests, releases, and workflow runs."
+                        TextAlignment="Center"
+                        TextWrapping="Wrap" />
+                    <InfoBar x:Name="AuthInfoBar" IsOpen="False" />
+                    <Button
+                        HorizontalAlignment="Stretch"
+                        Click="OnGitHubOAuthClicked"
+                        Content="Sign in with GitHub"
+                        Style="{ThemeResource AccentButtonStyle}" />
+                    <Border
+                        x:Name="DeviceCodePanel"
+                        Padding="14"
+                        Background="{ThemeResource ControlFillColorSecondaryBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="1"
+                        CornerRadius="8"
+                        Visibility="Collapsed">
+                        <StackPanel Spacing="10">
+                            <TextBlock Style="{ThemeResource BodyStrongTextBlockStyle}" Text="Enter this code on GitHub" />
+                            <TextBox
+                                x:Name="DeviceCodeBox"
+                                FontFamily="Consolas"
+                                FontSize="24"
+                                FontWeight="SemiBold"
+                                IsReadOnly="True"
+                                TextAlignment="Center" />
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <Button Click="OnCopyDeviceCodeClicked" Content="Copy code" />
+                                <Button Click="OnOpenDevicePageClicked" Content="Open GitHub" />
+                                <Button Click="OnCancelDeviceFlowClicked" Content="Cancel" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                    <Border
+                        Padding="14"
+                        Background="{ThemeResource ControlFillColorSecondaryBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="1"
+                        CornerRadius="8">
+                        <StackPanel Spacing="10">
+                            <TextBlock Style="{ThemeResource BodyStrongTextBlockStyle}" Text="Personal access token" />
+                            <PasswordBox
+                                x:Name="PatBox"
+                                PasswordRevealMode="Peek"
+                                PlaceholderText="Paste a GitHub personal access token" />
+                            <TextBlock
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                Text="Use repo or public_repo plus read:user and read:org scopes."
+                                TextWrapping="Wrap" />
+                            <StackPanel HorizontalAlignment="Right" Orientation="Horizontal" Spacing="8">
+                                <Button Click="OnCreateTokenClicked" Content="Create token" />
+                                <Button Click="OnPatSignInClicked" Content="Connect" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <Grid
+            x:Name="ActivityContent"
+            MaxWidth="1500"
+            Padding="28,22,28,24"
+            HorizontalAlignment="Stretch"
+            RowSpacing="14">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <Grid ColumnSpacing="12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel Spacing="4">
+                    <TextBlock x:Name="PageHeaderTitle" FontSize="32" FontWeight="SemiBold" Text="Pull Requests" />
+                    <TextBlock
+                        x:Name="PageHeaderSubtitle"
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        Text="Review and track pull requests across GitHub." />
+                </StackPanel>
+                <Button
+                    Grid.Column="1"
+                    Width="40"
+                    Height="40"
+                    Padding="8"
+                    VerticalAlignment="Center"
+                    AutomationProperties.Name="Refresh GitHub data"
+                    Click="OnRefreshClicked"
+                    ToolTipService.ToolTip="Refresh">
+                    <FontIcon FontSize="18" Glyph="&#xE72C;" />
+                </Button>
+            </Grid>
+
+            <SelectorBar x:Name="ActivitySelector" Grid.Row="1" SelectionChanged="OnActivitySelectionChanged">
+                <SelectorBarItem x:Name="ReviewSelector" IsSelected="True" Text="To review" />
+                <SelectorBarItem x:Name="CreatedSelector" Text="Created by me" />
+            </SelectorBar>
+
+            <Grid Grid.Row="2" ColumnSpacing="10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="0" />
+                    <ColumnDefinition Width="0" />
+                </Grid.ColumnDefinitions>
+                <AutoSuggestBox
+                    x:Name="SearchBox"
+                    MinHeight="38"
+                    AutomationProperties.Name="Search pull requests"
+                    PlaceholderText="Search pull requests"
+                    QueryIcon="Find"
+                    TextChanged="OnSearchTextChanged" />
+                <ComboBox
+                    x:Name="ConclusionCombo"
+                    Grid.Column="1"
+                    Width="190"
+                    AutomationProperties.Name="Workflow conclusion filter"
+                    SelectionChanged="OnConclusionChanged"
+                    Visibility="Collapsed">
+                    <ComboBoxItem Content="All conclusions" IsSelected="True" Tag="" />
+                    <ComboBoxItem Content="Succeeded" Tag="success" />
+                    <ComboBoxItem Content="Failed" Tag="failure" />
+                    <ComboBoxItem Content="Cancelled" Tag="cancelled" />
+                    <ComboBoxItem Content="In progress" Tag="in_progress" />
+                </ComboBox>
+                <ComboBox
+                    x:Name="OrganizationCombo"
+                    Grid.Column="2"
+                    AutomationProperties.Name="Organization filter"
+                    SelectionChanged="OnOrganizationChanged"
+                    Visibility="Collapsed">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <Image Width="18" Height="18" Source="{Binding AvatarSource}" />
+                                <TextBlock Text="{Binding DisplayName}" TextTrimming="CharacterEllipsis" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+                <Button
+                    x:Name="UserMenuButton"
+                    Grid.Column="3"
+                    MinWidth="96"
+                    Content="GitHub"
+                    Visibility="Collapsed">
+                    <Button.Flyout>
+                        <MenuFlyout>
+                            <MenuFlyoutItem Click="OnSignOutClicked" Text="Sign out" />
+                        </MenuFlyout>
+                    </Button.Flyout>
+                </Button>
+            </Grid>
+
+            <Grid Grid.Row="3">
+                <ScrollViewer
+                    x:Name="PullRequestContent"
+                    HorizontalScrollBarVisibility="Disabled"
+                    HorizontalScrollMode="Disabled"
+                    VerticalScrollBarVisibility="Auto"
+                    VerticalScrollMode="Auto">
+                    <StackPanel Spacing="14">
+                    <Border x:Name="PrimaryPullRequestSurface" Height="520" Style="{StaticResource ActivitySurfaceStyle}">
+                        <Grid Padding="16">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <TextBlock x:Name="PageTitle" Style="{ThemeResource SubtitleTextBlockStyle}" Text="Pull requests to review" />
+                            <Grid
+                                Grid.Row="1"
+                                Margin="0,12,0,0"
+                                Padding="14,9"
+                                ColumnSpacing="10"
+                                Background="{ThemeResource ControlFillColorSecondaryBrush}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" MinWidth="54" />
+                                    <ColumnDefinition Width="2.2*" MinWidth="120" />
+                                    <ColumnDefinition Width="1.25*" MinWidth="85" />
+                                    <ColumnDefinition Width="Auto" MinWidth="70" />
+                                    <ColumnDefinition Width="Auto" MinWidth="80" />
+                                    <ColumnDefinition Width="Auto" MinWidth="60" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Style="{ThemeResource CaptionTextBlockStyle}" Text="PR" />
+                                <TextBlock Grid.Column="1" Style="{ThemeResource CaptionTextBlockStyle}" Text="PULL REQUEST" />
+                                <TextBlock Grid.Column="2" Style="{ThemeResource CaptionTextBlockStyle}" Text="REPOSITORY / AUTHOR" />
+                                <TextBlock Grid.Column="3" Style="{ThemeResource CaptionTextBlockStyle}" Text="STATUS" />
+                                <TextBlock Grid.Column="4" Style="{ThemeResource CaptionTextBlockStyle}" Text="UPDATED" />
+                            </Grid>
+                            <ListView
+                                x:Name="PullRequestList"
+                                Grid.Row="2"
+                                Margin="0,0,0,8"
+                                HorizontalContentAlignment="Stretch"
+                                Loaded="OnPullRequestListLoaded"
+                                SelectionMode="None">
+                                <ListView.ItemTemplate>
+                                    <DataTemplate>
+                                        <controls:PullRequestRowControl
+                                            CopyNumberRequested="OnPrNumberCopyRequested"
+                                            OpenRequested="OnPrOpenRequested" />
+                                    </DataTemplate>
+                                </ListView.ItemTemplate>
+                            </ListView>
+                            <StackPanel Grid.Row="3" Orientation="Horizontal" Spacing="8">
+                                <Button x:Name="LoadMoreButton" Click="OnLoadMoreClicked" Content="Load more" />
+                                <TextBlock x:Name="StatusText" VerticalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="Ready" />
+                            </StackPanel>
+
+                            <StackPanel
+                                x:Name="EmptyState"
+                                Grid.Row="2"
+                                MaxWidth="420"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Spacing="8"
+                                Visibility="Collapsed">
+                                <SymbolIcon HorizontalAlignment="Center" Symbol="Accept" />
+                                <TextBlock x:Name="EmptyTitle" HorizontalAlignment="Center" Style="{ThemeResource SubtitleTextBlockStyle}" Text="All caught up" />
+                                <TextBlock
+                                    x:Name="EmptyMessage"
+                                    HorizontalAlignment="Center"
+                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                    Text="No pull requests in this view."
+                                    TextAlignment="Center"
+                                    TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <Border x:Name="RecentActivitySurface" Height="330" Style="{StaticResource ActivitySurfaceStyle}">
+                        <Grid Padding="16">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+                            <TextBlock x:Name="RecentActivityTitle" Style="{ThemeResource SubtitleTextBlockStyle}" Text="Recently reviewed" />
+                            <ListView
+                                x:Name="ReviewedList"
+                                Grid.Row="1"
+                                Margin="0,10,0,0"
+                                HorizontalContentAlignment="Stretch"
+                                SelectionMode="None">
+                                <ListView.ItemTemplate>
+                                    <DataTemplate>
+                                        <controls:PullRequestRowControl
+                                            IsCompact="True"
+                                            ShowSummary="False"
+                                            CopyNumberRequested="OnPrNumberCopyRequested"
+                                            OpenRequested="OnPrOpenRequested" />
+                                    </DataTemplate>
+                                </ListView.ItemTemplate>
+                            </ListView>
+                            <ListView
+                                x:Name="RecentlyCreatedList"
+                                Grid.Row="1"
+                                Margin="0,10,0,0"
+                                HorizontalContentAlignment="Stretch"
+                                SelectionMode="None"
+                                Visibility="Collapsed">
+                                <ListView.ItemTemplate>
+                                    <DataTemplate>
+                                        <controls:PullRequestRowControl
+                                            IsCompact="True"
+                                            ShowAuthor="False"
+                                            ShowSummary="False"
+                                            CopyNumberRequested="OnPrNumberCopyRequested"
+                                            OpenRequested="OnPrOpenRequested" />
+                                    </DataTemplate>
+                                </ListView.ItemTemplate>
+                            </ListView>
+                        </Grid>
+                    </Border>
+                    </StackPanel>
+                </ScrollViewer>
+
+                <Border
+                    x:Name="RepositoryContent"
+                    Style="{StaticResource ActivitySurfaceStyle}"
+                    Visibility="Collapsed">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Grid Padding="18,16,18,12" ColumnSpacing="12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock x:Name="RepositoryActivityTitle" Style="{ThemeResource SubtitleTextBlockStyle}" Text="Releases" />
+                            <TextBlock
+                                x:Name="RepositoryUpdatedText"
+                                Grid.Column="1"
+                                VerticalAlignment="Center"
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                Text="Updated just now" />
+                        </Grid>
+                        <Grid
+                            x:Name="ReleaseHeader"
+                            Grid.Row="1"
+                            Padding="14,9"
+                            ColumnSpacing="16"
+                            Background="{ThemeResource ControlFillColorSecondaryBrush}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="2.2*" MinWidth="160" />
+                                <ColumnDefinition Width="1.8*" MinWidth="130" />
+                                <ColumnDefinition Width="1.1*" MinWidth="90" />
+                                <ColumnDefinition Width="1*" MinWidth="80" />
+                                <ColumnDefinition Width="Auto" MinWidth="98" />
+                                <ColumnDefinition Width="Auto" MinWidth="90" />
+                                <ColumnDefinition Width="Auto" MinWidth="74" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Style="{ThemeResource CaptionTextBlockStyle}" Text="RELEASE" />
+                            <TextBlock Grid.Column="1" Style="{ThemeResource CaptionTextBlockStyle}" Text="REPOSITORY" />
+                            <TextBlock Grid.Column="2" Style="{ThemeResource CaptionTextBlockStyle}" Text="TAG" />
+                            <TextBlock Grid.Column="3" Style="{ThemeResource CaptionTextBlockStyle}" Text="AUTHOR" />
+                            <TextBlock Grid.Column="4" Style="{ThemeResource CaptionTextBlockStyle}" Text="TYPE" />
+                            <TextBlock Grid.Column="5" Style="{ThemeResource CaptionTextBlockStyle}" Text="PUBLISHED" />
+                        </Grid>
+                        <Grid
+                            x:Name="WorkflowHeader"
+                            Grid.Row="1"
+                            Padding="14,9"
+                            ColumnSpacing="16"
+                            Background="{ThemeResource ControlFillColorSecondaryBrush}"
+                            Visibility="Collapsed">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="2.2*" MinWidth="170" />
+                                <ColumnDefinition Width="1.6*" MinWidth="130" />
+                                <ColumnDefinition Width="1.5*" MinWidth="130" />
+                                <ColumnDefinition Width="Auto" MinWidth="100" />
+                                <ColumnDefinition Width="Auto" MinWidth="90" />
+                                <ColumnDefinition Width="Auto" MinWidth="90" />
+                                <ColumnDefinition Width="Auto" MinWidth="74" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Style="{ThemeResource CaptionTextBlockStyle}" Text="WORKFLOW" />
+                            <TextBlock Grid.Column="1" Style="{ThemeResource CaptionTextBlockStyle}" Text="REPOSITORY" />
+                            <TextBlock Grid.Column="2" Style="{ThemeResource CaptionTextBlockStyle}" Text="TRIGGER &amp; BRANCH" />
+                            <TextBlock Grid.Column="3" Style="{ThemeResource CaptionTextBlockStyle}" Text="CONCLUSION" />
+                            <TextBlock Grid.Column="4" Style="{ThemeResource CaptionTextBlockStyle}" Text="STATUS" />
+                            <TextBlock Grid.Column="5" Style="{ThemeResource CaptionTextBlockStyle}" Text="STARTED" />
+                        </Grid>
+                        <ListView
+                            x:Name="RepositoryActivityList"
+                            Grid.Row="2"
+                            HorizontalContentAlignment="Stretch"
+                            SelectionMode="None">
+                            <ListView.ItemTemplate>
+                                <DataTemplate>
+                                    <controls:RepositoryActivityRowControl OpenRequested="OnRepositoryActivityOpenRequested" />
+                                </DataTemplate>
+                            </ListView.ItemTemplate>
+                        </ListView>
+                        <StackPanel
+                            x:Name="RepositoryEmptyState"
+                            Grid.Row="2"
+                            MaxWidth="500"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Spacing="8"
+                            Visibility="Collapsed">
+                            <SymbolIcon HorizontalAlignment="Center" Symbol="Accept" />
+                            <TextBlock x:Name="RepositoryEmptyTitle" HorizontalAlignment="Center" Style="{ThemeResource SubtitleTextBlockStyle}" Text="No items found" />
+                            <TextBlock
+                                x:Name="RepositoryEmptyMessage"
+                                HorizontalAlignment="Center"
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                Text="No repository activity in this view."
+                                TextAlignment="Center"
+                                TextWrapping="Wrap" />
+                        </StackPanel>
+                        <Grid Grid.Row="3" Padding="16,10" Background="{ThemeResource ControlFillColorSecondaryBrush}">
+                            <TextBlock
+                                x:Name="RepositoryStatusText"
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                Text="Ready" />
+                        </Grid>
+                    </Grid>
+                </Border>
+
+                <StackPanel
+                    x:Name="ErrorState"
+                    MaxWidth="520"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Spacing="10"
+                    Visibility="Collapsed">
+                    <SymbolIcon HorizontalAlignment="Center" Foreground="{ThemeResource SystemFillColorCriticalBrush}" Symbol="Important" />
+                    <TextBlock HorizontalAlignment="Center" Style="{ThemeResource SubtitleTextBlockStyle}" Text="Something went wrong" />
+                    <TextBlock
+                        x:Name="ErrorMessage"
+                        HorizontalAlignment="Center"
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        TextAlignment="Center"
+                        TextWrapping="Wrap" />
+                    <Button HorizontalAlignment="Center" Click="OnRefreshClicked" Content="Try again" />
+                </StackPanel>
+            </Grid>
+
+            <ProgressBar
+                x:Name="ActivityProgress"
+                Grid.Row="3"
+                Height="3"
+                VerticalAlignment="Top"
+                IsIndeterminate="True"
+                Visibility="Collapsed" />
+
+            <Grid Grid.Row="4">
+                <ProgressRing
+                    x:Name="LoadingRing"
+                    Width="22"
+                    Height="22"
+                    HorizontalAlignment="Right"
+                    IsActive="False" />
+            </Grid>
+        </Grid>
+    </Grid>
+</Page>

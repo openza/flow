@@ -1,0 +1,364 @@
+<Page
+    x:Name="SettingsPageRoot"
+    x:Class="Openza.Flow.Pages.SettingsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    SizeChanged="OnPageSizeChanged"
+    mc:Ignorable="d">
+    <Page.Resources>
+        <Style x:Key="SettingsSurfaceStyle" TargetType="Border">
+            <Setter Property="Background" Value="{ThemeResource CardBackgroundFillColorDefaultBrush}" />
+            <Setter Property="BorderBrush" Value="{ThemeResource CardStrokeColorDefaultBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="8" />
+        </Style>
+        <Style x:Key="SettingsDividerStyle" TargetType="Rectangle">
+            <Setter Property="Height" Value="1" />
+            <Setter Property="Fill" Value="{ThemeResource DividerStrokeColorDefaultBrush}" />
+        </Style>
+    </Page.Resources>
+
+    <ScrollViewer
+        HorizontalContentAlignment="Stretch"
+        HorizontalScrollBarVisibility="Disabled"
+        HorizontalScrollMode="Disabled"
+        VerticalScrollBarVisibility="Auto"
+        VerticalScrollMode="Auto">
+        <Grid
+            MaxWidth="1500"
+            Padding="28,22,28,36"
+            HorizontalAlignment="Stretch"
+            RowSpacing="16">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <StackPanel Spacing="4">
+                <TextBlock FontSize="32" FontWeight="SemiBold" Text="Settings" />
+                <TextBlock
+                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                    Text="Configure agent environments, appearance, and background behavior." />
+            </StackPanel>
+            <InfoBar x:Name="SettingsInfoBar" Grid.Row="1" IsOpen="False" />
+
+            <Grid x:Name="SettingsColumns" Grid.Row="2" ColumnSpacing="16" RowSpacing="16">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition x:Name="LeftSettingsColumn" Width="*" />
+                    <ColumnDefinition x:Name="RightSettingsColumn" Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel x:Name="AgentSettingsColumn" Spacing="10">
+                    <TextBlock Style="{ThemeResource BodyStrongTextBlockStyle}" Text="Agents" />
+                    <Border Padding="18" Style="{StaticResource SettingsSurfaceStyle}">
+                        <StackPanel Spacing="14">
+                            <StackPanel Spacing="3">
+                                <TextBlock Style="{ThemeResource SubtitleTextBlockStyle}" Text="Agent environments" />
+                                <TextBlock
+                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                    Text="Choose which detected agent installations contribute sessions."
+                                    TextWrapping="Wrap" />
+                            </StackPanel>
+                            <Rectangle Style="{StaticResource SettingsDividerStyle}" />
+                            <ItemsControl x:Name="AgentEnvironmentList">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Padding="0,8" ColumnSpacing="12">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel Spacing="2">
+                                                <TextBlock FontWeight="SemiBold" Text="{Binding DisplayName}" />
+                                                <TextBlock
+                                                    FontSize="13"
+                                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                    Text="{Binding VersionAndStatus}" />
+                                            </StackPanel>
+                                            <ToggleSwitch
+                                                Grid.Column="1"
+                                                AutomationProperties.Name="{Binding DisplayName}"
+                                                IsEnabled="{Binding CanEnable}"
+                                                IsOn="{Binding IsEnabled, Mode=TwoWay}"
+                                                Tag="{Binding Id}"
+                                                Toggled="OnAgentEnvironmentToggled" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Padding="18" Style="{StaticResource SettingsSurfaceStyle}">
+                        <StackPanel Spacing="12">
+                            <StackPanel Spacing="3">
+                                <TextBlock Style="{ThemeResource SubtitleTextBlockStyle}" Text="Terminal launch mode" />
+                                <TextBlock
+                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                    Text="Choose where resumed sessions open in Windows Terminal."
+                                    TextWrapping="Wrap" />
+                            </StackPanel>
+                            <ComboBox
+                                x:Name="TerminalLaunchModeCombo"
+                                HorizontalAlignment="Stretch"
+                                AutomationProperties.Name="Terminal launch mode"
+                                SelectionChanged="OnTerminalLaunchModeChanged">
+                                <ComboBoxItem Content="New tab in most recent window" Tag="NewTab" />
+                                <ComboBoxItem Content="New Windows Terminal window" Tag="NewWindow" />
+                            </ComboBox>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <StackPanel x:Name="GeneralSettingsColumn" Grid.Column="1" Spacing="10">
+                    <TextBlock Style="{ThemeResource BodyStrongTextBlockStyle}" Text="App preferences" />
+                    <Border Style="{StaticResource SettingsSurfaceStyle}">
+                        <StackPanel>
+                            <Grid Padding="18,16" ColumnSpacing="16">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Spacing="2">
+                                    <TextBlock x:Name="GitHubStatusText" FontWeight="SemiBold" Text="GitHub not connected" />
+                                    <TextBlock
+                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                        Text="Optional pull requests, releases, and workflow runs."
+                                        TextWrapping="Wrap" />
+                                </StackPanel>
+                                <Button Grid.Column="1" Click="OnManageGitHubClicked" Content="Manage" />
+                            </Grid>
+                            <Rectangle Style="{StaticResource SettingsDividerStyle}" />
+                            <Grid Padding="18,16" ColumnSpacing="16">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Spacing="2">
+                                    <TextBlock FontWeight="SemiBold" Text="Theme" />
+                                    <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="Follow Windows or choose a theme." />
+                                </StackPanel>
+                                <ComboBox
+                                    x:Name="ThemeCombo"
+                                    Grid.Column="1"
+                                    Width="160"
+                                    AutomationProperties.Name="Theme"
+                                    SelectionChanged="OnThemeChanged">
+                                    <ComboBoxItem Content="System" Tag="system" />
+                                    <ComboBoxItem Content="Light" Tag="light" />
+                                    <ComboBoxItem Content="Dark" Tag="dark" />
+                                </ComboBox>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <TextBlock Margin="0,8,0,0" Style="{ThemeResource BodyStrongTextBlockStyle}" Text="Notifications and background" />
+                    <Border Style="{StaticResource SettingsSurfaceStyle}">
+                        <StackPanel>
+                            <Grid Padding="18,16" ColumnSpacing="16">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Spacing="2">
+                                    <TextBlock FontWeight="SemiBold" Text="Notifications" />
+                                    <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="Notify when new review requests appear." />
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                                    <Button Click="OnTestNotificationClicked" Content="Test" />
+                                    <ToggleSwitch x:Name="NotificationsToggle" AutomationProperties.Name="Notifications" Toggled="OnNotificationsToggled" />
+                                </StackPanel>
+                            </Grid>
+                            <Rectangle Style="{StaticResource SettingsDividerStyle}" />
+                            <Grid Padding="18,16" ColumnSpacing="16">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Spacing="2">
+                                    <TextBlock FontWeight="SemiBold" Text="Run in background" />
+                                    <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="Keep Flow in the tray when the window closes." />
+                                </StackPanel>
+                                <ToggleSwitch
+                                    x:Name="RunInBackgroundToggle"
+                                    Grid.Column="1"
+                                    AutomationProperties.Name="Run Openza Flow in the background"
+                                    Toggled="OnRunInBackgroundToggled" />
+                            </Grid>
+                            <Rectangle Style="{StaticResource SettingsDividerStyle}" />
+                            <Grid Padding="18,16" ColumnSpacing="16">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Spacing="2">
+                                    <TextBlock FontWeight="SemiBold" Text="Start with Windows" />
+                                    <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="Launch Flow after you sign in to Windows." />
+                                </StackPanel>
+                                <ToggleSwitch
+                                    x:Name="StartWithWindowsToggle"
+                                    Grid.Column="1"
+                                    AutomationProperties.Name="Start Openza Flow with Windows"
+                                    Toggled="OnStartWithWindowsToggled" />
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                </StackPanel>
+            </Grid>
+
+            <StackPanel Grid.Row="3" Spacing="10">
+                <TextBlock Style="{ThemeResource BodyStrongTextBlockStyle}" Text="About" />
+                <Border Padding="20" Style="{StaticResource SettingsSurfaceStyle}">
+                    <Grid ColumnSpacing="18" RowSpacing="14">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <Image
+                            Grid.RowSpan="2"
+                            Width="64"
+                            Height="64"
+                            VerticalAlignment="Top"
+                            AutomationProperties.Name="Openza Flow logo"
+                            Source="ms-appx:///Assets/Square150x150Logo.png" />
+
+                        <StackPanel Grid.Column="1" Spacing="4">
+                            <StackPanel Orientation="Horizontal" Spacing="10">
+                                <TextBlock Style="{ThemeResource SubtitleTextBlockStyle}" Text="Openza Flow" />
+                                <Border
+                                    Padding="9,3"
+                                    VerticalAlignment="Center"
+                                    Background="{ThemeResource ControlFillColorSecondaryBrush}"
+                                    CornerRadius="10">
+                                    <TextBlock
+                                        x:Name="AppVersionText"
+                                        FontSize="12"
+                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                        Text="Version" />
+                                </Border>
+                            </StackPanel>
+                            <TextBlock
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                Text="A local-first, open-source Windows companion for agent sessions and everyday developer activity."
+                                TextWrapping="Wrap" />
+                        </StackPanel>
+
+                        <StackPanel
+                            Grid.Row="1"
+                            Grid.Column="1"
+                            Orientation="Horizontal"
+                            Spacing="8">
+                            <Button
+                                AutomationProperties.Name="Open Openza Flow user guide"
+                                Click="OnAboutLinkClicked"
+                                Content="User guide"
+                                Tag="https://solanky.dev/openza/flow/"
+                                Style="{ThemeResource AccentButtonStyle}" />
+                            <Button
+                                AutomationProperties.Name="Open Openza Flow source code"
+                                Click="OnAboutLinkClicked"
+                                Content="Source code"
+                                Tag="https://github.com/openza/flow" />
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <Border Style="{StaticResource SettingsSurfaceStyle}">
+                    <StackPanel>
+                        <Grid Padding="18,15" ColumnSpacing="16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Spacing="2">
+                                <TextBlock FontWeight="SemiBold" Text="Release notes" />
+                                <TextBlock
+                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                    Text="See what changed in published versions of Flow."
+                                    TextWrapping="Wrap" />
+                            </StackPanel>
+                            <HyperlinkButton
+                                Grid.Column="1"
+                                AutomationProperties.Name="Open Openza Flow release notes"
+                                Content="Open"
+                                NavigateUri="https://github.com/openza/flow/releases" />
+                        </Grid>
+                        <Rectangle Style="{StaticResource SettingsDividerStyle}" />
+                        <Grid Padding="18,15" ColumnSpacing="16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Spacing="2">
+                                <TextBlock FontWeight="SemiBold" Text="Privacy" />
+                                <TextBlock
+                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                    Text="Flow has no telemetry or analytics. Read how local and GitHub data are handled."
+                                    TextWrapping="Wrap" />
+                            </StackPanel>
+                            <HyperlinkButton
+                                Grid.Column="1"
+                                AutomationProperties.Name="Open Openza Flow privacy policy"
+                                Content="Open"
+                                NavigateUri="https://solanky.dev/openza/flow/privacy/" />
+                        </Grid>
+                        <Rectangle Style="{StaticResource SettingsDividerStyle}" />
+                        <Grid Padding="18,15" ColumnSpacing="16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Spacing="2">
+                                <TextBlock FontWeight="SemiBold" Text="Support and feedback" />
+                                <TextBlock
+                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                    Text="Report a bug, suggest an improvement, or follow development on GitHub."
+                                    TextWrapping="Wrap" />
+                            </StackPanel>
+                            <HyperlinkButton
+                                Grid.Column="1"
+                                AutomationProperties.Name="Open Openza Flow issues"
+                                Content="Open"
+                                NavigateUri="https://solanky.dev/openza/flow/support/" />
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <Border Padding="18,14" Style="{StaticResource SettingsSurfaceStyle}">
+                    <Grid ColumnSpacing="16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Spacing="2">
+                            <TextBlock FontWeight="SemiBold" Text="Open source under the MIT License" />
+                            <TextBlock
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                Text="Maintained by Deependra Solanky and the Openza community."
+                                TextWrapping="Wrap" />
+                        </StackPanel>
+                        <HyperlinkButton
+                            Grid.Column="1"
+                            AutomationProperties.Name="Email the Openza Flow maintainer"
+                            Content="deependra@solanky.dev"
+                            NavigateUri="mailto:deependra@solanky.dev" />
+                    </Grid>
+                </Border>
+            </StackPanel>
+        </Grid>
+    </ScrollViewer>
+</Page>
