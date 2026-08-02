@@ -81,6 +81,7 @@ public sealed class HomeViewModel : ObservableObject
     private bool _isRefreshing;
     private bool _isActive;
     private int _visibleItemLimit = 3;
+    private IReadOnlyList<DeveloperProjectSummary> _projects = [];
 
     public HomeViewModel(IAgentSessionWorkspace workspace, GitHubWorkspaceState github)
     {
@@ -196,7 +197,7 @@ public sealed class HomeViewModel : ObservableObject
                 Subtitle = $"Session · {session.Environment.DisplayName} · {session.Git?.RepositoryName ?? DisplayText.LastPathSegment(session.WorkingDirectory)}",
                 SessionKey = session.Key
             });
-        var projects = DeveloperProjectUtilities.Aggregate(_workspace.Sessions)
+        var projects = _projects
             .Where(project => DeveloperProjectUtilities.Matches(project, query))
             .Take(3)
             .Select(project => new HomeSearchResult
@@ -218,6 +219,7 @@ public sealed class HomeViewModel : ObservableObject
 
     private void Rebuild()
     {
+        _projects = DeveloperProjectUtilities.Aggregate(_workspace.Sessions);
         IsRefreshing = _workspace.IsRefreshing;
         SessionStatus = _workspace.StatusMessage;
         Replace(ContinueWorking, _workspace.Sessions.Take(_visibleItemLimit).Select(session => new DashboardSessionItem { Summary = session }));
@@ -294,5 +296,16 @@ internal static class DisplayText
             : elapsed.TotalDays < 1 ? $"{Math.Max(1, (int)elapsed.TotalHours)} hr ago"
             : elapsed.TotalDays < 7 ? $"{Math.Max(1, (int)elapsed.TotalDays)} days ago"
             : value.ToLocalTime().ToString("d MMM yyyy");
+    }
+
+    public static string ProviderName(string environmentId)
+    {
+        var separator = environmentId.IndexOf(':');
+        var provider = separator > 0 ? environmentId[..separator] : environmentId;
+        return provider.Equals("codex", StringComparison.OrdinalIgnoreCase)
+            ? "Codex"
+            : string.IsNullOrEmpty(provider)
+                ? "Agent"
+                : char.ToUpperInvariant(provider[0]) + provider[1..];
     }
 }

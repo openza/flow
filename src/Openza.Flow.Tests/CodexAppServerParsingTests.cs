@@ -8,6 +8,14 @@ namespace Openza.Flow.Tests;
 public sealed class CodexAppServerParsingTests
 {
     [Fact]
+    public void NonProtocolStdoutLineIsIgnored()
+    {
+        Assert.False(CodexAppServerClient.TryParseResponseLine("Codex starting…", out _));
+        Assert.True(CodexAppServerClient.TryParseResponseLine("{\"id\":1,\"result\":{}}", out var document));
+        document.Dispose();
+    }
+
+    [Fact]
     public void SessionPageParsesOpaqueCursorAndMetadata()
     {
         using var document = JsonDocument.Parse("""
@@ -84,5 +92,16 @@ public sealed class CodexAppServerParsingTests
         var session = Assert.Single(CodexAppServerClient.ParseSessionListPage(document.RootElement, environment).Sessions);
 
         Assert.Equal(expected, session.Source);
+    }
+
+    [Theory]
+    [InlineData("git@github.com:openza/flow.git", "flow")]
+    [InlineData("https://github.com/openza/flow.git?ref=main#readme", "flow")]
+    [InlineData("ssh://git@github.com/openza/flow.git", "flow")]
+    public void RepositoryNameHandlesCommonRemoteForms(string remoteUrl, string expected)
+    {
+        var metadata = new AgentGitMetadata("main", "/work/fallback", remoteUrl);
+
+        Assert.Equal(expected, metadata.RepositoryName);
     }
 }

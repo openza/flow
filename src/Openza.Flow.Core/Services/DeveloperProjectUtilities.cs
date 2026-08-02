@@ -19,13 +19,14 @@ public static class DeveloperProjectUtilities
                 DeveloperProjectGroupingKeyComparer.Instance)
             .Select(group =>
             {
-                var latest = group
-                    .Select(item => item.Session)
-                    .OrderByDescending(session => session.RecencyAt)
+                var latestItem = group
+                    .OrderByDescending(item => item.Session.RecencyAt)
                     .First();
-                var root = group.Key.ProjectKey.RootPath;
+                var latest = latestItem.Session;
+                var root = latestItem.Root;
+                var projectKey = new DeveloperProjectKey(latest.Environment.Id, root);
                 return new DeveloperProjectSummary(
-                    group.Key.ProjectKey,
+                    projectKey,
                     latest.Git?.RepositoryName ?? LastPathSegment(root),
                     root,
                     latest.Git?.Branch,

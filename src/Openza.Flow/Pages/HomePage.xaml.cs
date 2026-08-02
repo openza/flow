@@ -69,6 +69,11 @@ public sealed partial class HomePage : Page
         catch (OperationCanceledException)
         {
         }
+        catch (Exception exception)
+        {
+            AppLog.Write(exception);
+            ShowActionMessage("The dashboard could not be refreshed. Try again.");
+        }
 
         UpdatePresentation();
     }
@@ -115,24 +120,28 @@ public sealed partial class HomePage : Page
             return;
         }
 
-        var validation = await _terminalLauncher.ValidateAsync(session);
-        if (!validation.IsValid)
-        {
-            ProviderInfoBar.Severity = InfoBarSeverity.Error;
-            ProviderInfoBar.Message = validation.Message ?? "The session cannot be resumed.";
-            ProviderInfoBar.IsOpen = true;
-            return;
-        }
-
         try
         {
+            var validation = await _terminalLauncher.ValidateAsync(session);
+            if (!validation.IsValid)
+            {
+                ShowActionMessage(validation.Message ?? "The session cannot be resumed.");
+                return;
+            }
+
             await _terminalLauncher.LaunchAsync(session, _settings.TerminalLaunchMode);
         }
         catch (TerminalLaunchException exception)
         {
-            ProviderInfoBar.Severity = InfoBarSeverity.Error;
-            ProviderInfoBar.Message = exception.Message;
-            ProviderInfoBar.IsOpen = true;
+            ShowActionMessage(exception.Message);
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        catch (Exception exception)
+        {
+            AppLog.Write(exception);
+            ShowActionMessage("The session could not be resumed. Try again.");
         }
     }
 
@@ -160,5 +169,12 @@ public sealed partial class HomePage : Page
         NoAttentionTitle.Text = ViewModel.IsGitHubConnected ? "Nothing needs attention" : "Connect GitHub for review activity";
         ProviderInfoBar.IsOpen = ViewModel.HasPartialFailure;
         ProviderInfoBar.Severity = ViewModel.HasSessions ? InfoBarSeverity.Warning : InfoBarSeverity.Error;
+    }
+
+    private void ShowActionMessage(string message)
+    {
+        ActionInfoBar.Message = message;
+        ActionInfoBar.Severity = InfoBarSeverity.Error;
+        ActionInfoBar.IsOpen = true;
     }
 }

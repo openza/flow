@@ -134,6 +134,9 @@
                     IsOpen="False"
                     Message="{Binding SessionStatus}"
                     Severity="Warning" />
+                <InfoBar
+                    x:Name="ActionInfoBar"
+                    IsOpen="False" />
                 <StackPanel Orientation="Horizontal" Spacing="10">
                     <ItemsControl ItemsSource="{Binding EnvironmentStatuses}">
                         <ItemsControl.ItemsPanel>

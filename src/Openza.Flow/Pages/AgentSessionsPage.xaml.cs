@@ -20,6 +20,7 @@ public sealed partial class AgentSessionsPage : Page
         ViewModel = new AgentSessionsViewModel(workspace, settings, terminalLauncher);
         InitializeComponent();
         DataContext = ViewModel;
+        GroupedSessions.Source = ViewModel.Groups;
         Loaded += OnPageLoaded;
         Unloaded += OnPageUnloaded;
     }
@@ -50,6 +51,11 @@ public sealed partial class AgentSessionsPage : Page
         catch (OperationCanceledException)
         {
         }
+        catch (Exception exception)
+        {
+            AppLog.Write(exception);
+            ShowActionMessage("Agent sessions could not be loaded. Try again.", InfoBarSeverity.Error);
+        }
     }
 
     private void OnPageLoaded(object sender, RoutedEventArgs e)
@@ -70,7 +76,10 @@ public sealed partial class AgentSessionsPage : Page
     {
         await ViewModel.SelectByKeyAsync(key);
         SessionList.SelectedItem = ViewModel.SelectedSession;
-        SessionList.ScrollIntoView(ViewModel.SelectedSession);
+        if (ViewModel.SelectedSession is not null)
+        {
+            SessionList.ScrollIntoView(ViewModel.SelectedSession);
+        }
         UpdateSelectionPresentation();
     }
 
@@ -100,6 +109,11 @@ public sealed partial class AgentSessionsPage : Page
         }
         catch (OperationCanceledException)
         {
+        }
+        catch (Exception exception)
+        {
+            AppLog.Write(exception);
+            ShowActionMessage("Agent sessions could not be refreshed. Try again.", InfoBarSeverity.Error);
         }
         UpdateStatePresentation();
     }
@@ -352,12 +366,16 @@ public sealed partial class AgentSessionsPage : Page
             ListPanel.Visibility = hasSelection ? Visibility.Collapsed : Visibility.Visible;
             DetailPanel.Visibility = hasSelection ? Visibility.Visible : Visibility.Collapsed;
             BackButton.Visibility = hasSelection ? Visibility.Visible : Visibility.Collapsed;
+            ListColumn.Width = hasSelection ? new GridLength(0) : new GridLength(1, GridUnitType.Star);
+            DetailColumn.Width = hasSelection ? new GridLength(1, GridUnitType.Star) : new GridLength(0);
         }
         else
         {
             ListPanel.Visibility = Visibility.Visible;
             DetailPanel.Visibility = Visibility.Visible;
             BackButton.Visibility = Visibility.Collapsed;
+            ListColumn.Width = new GridLength(1, GridUnitType.Star);
+            DetailColumn.Width = new GridLength(_isCompact ? 390 : 430);
         }
     }
 
@@ -406,6 +424,7 @@ public sealed partial class AgentSessionsPage : Page
         var package = new DataPackage();
         package.SetText(text);
         Clipboard.SetContent(package);
+        Clipboard.Flush();
     }
 }
 

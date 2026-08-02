@@ -44,6 +44,7 @@ public sealed class AgentSessionsViewModel : ObservableObject
     private bool _isActive;
     private int _visibleSessionLimit = SessionPageSize;
     private int _matchingSessionCount;
+    private bool _suppressFilterApplication;
 
     public AgentSessionsViewModel(
         IAgentSessionWorkspace workspace,
@@ -119,7 +120,7 @@ public sealed class AgentSessionsViewModel : ObservableObject
             if (SetProperty(ref _searchText, value))
             {
                 _visibleSessionLimit = SessionPageSize;
-                ApplyFilters();
+                ApplyFiltersUnlessSuppressed();
             }
         }
     }
@@ -132,7 +133,7 @@ public sealed class AgentSessionsViewModel : ObservableObject
             if (SetProperty(ref _selectedEnvironmentId, value))
             {
                 _visibleSessionLimit = SessionPageSize;
-                ApplyFilters();
+                ApplyFiltersUnlessSuppressed();
             }
         }
     }
@@ -145,7 +146,7 @@ public sealed class AgentSessionsViewModel : ObservableObject
             if (SetProperty(ref _selectedAgentId, value))
             {
                 _visibleSessionLimit = SessionPageSize;
-                ApplyFilters();
+                ApplyFiltersUnlessSuppressed();
             }
         }
     }
@@ -158,7 +159,7 @@ public sealed class AgentSessionsViewModel : ObservableObject
             if (SetProperty(ref _selectedSource, value))
             {
                 _visibleSessionLimit = SessionPageSize;
-                ApplyFilters();
+                ApplyFiltersUnlessSuppressed();
             }
         }
     }
@@ -171,7 +172,7 @@ public sealed class AgentSessionsViewModel : ObservableObject
             if (SetProperty(ref _groupingMode, value))
             {
                 _visibleSessionLimit = SessionPageSize;
-                ApplyFilters();
+                ApplyFiltersUnlessSuppressed();
             }
         }
     }
@@ -240,6 +241,8 @@ public sealed class AgentSessionsViewModel : ObservableObject
     public async Task RefreshAsync(bool preserveExisting = true, CancellationToken cancellationToken = default)
     {
         _previewCts?.Cancel();
+        _previewCts = null;
+        IsPreviewLoading = false;
         SelectedSession = null;
         Preview = null;
         await _workspace.RefreshAsync(preserveExisting, cancellationToken);
@@ -249,16 +252,17 @@ public sealed class AgentSessionsViewModel : ObservableObject
     public async Task SelectAsync(AgentSessionListItem? item, CancellationToken cancellationToken = default)
     {
         _previewCts?.Cancel();
-        _previewCts?.Dispose();
-        var previewCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        _previewCts = previewCts;
         SelectedSession = item;
         Preview = null;
         if (item is null)
         {
+            _previewCts = null;
+            IsPreviewLoading = false;
             return;
         }
 
+        var previewCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        _previewCts = previewCts;
         IsPreviewLoading = true;
         try
         {
@@ -283,7 +287,10 @@ public sealed class AgentSessionsViewModel : ObservableObject
             if (ReferenceEquals(_previewCts, previewCts))
             {
                 IsPreviewLoading = false;
+                _previewCts = null;
             }
+
+            previewCts.Dispose();
         }
     }
 
@@ -333,17 +340,25 @@ public sealed class AgentSessionsViewModel : ObservableObject
 
     public async Task SelectByKeyAsync(AgentSessionKey key, CancellationToken cancellationToken = default)
     {
-        SearchText = string.Empty;
-        SelectedAgentId = null;
-        SelectedEnvironmentId = null;
-        SelectedSource = null;
-        var sessionIndex = _allSessions.FindIndex(session => session.Key.Equals(key));
-        if (sessionIndex >= _visibleSessionLimit)
+        _suppressFilterApplication = true;
+        try
         {
-            _visibleSessionLimit = ((sessionIndex / SessionPageSize) + 1) * SessionPageSize;
-            ApplyFilters();
+            SearchText = string.Empty;
+            SelectedAgentId = null;
+            SelectedEnvironmentId = null;
+            SelectedSource = null;
+            var sessionIndex = _allSessions.FindIndex(session => session.Key.Equals(key));
+            if (sessionIndex >= _visibleSessionLimit)
+            {
+                _visibleSessionLimit = ((sessionIndex / SessionPageSize) + 1) * SessionPageSize;
+            }
+        }
+        finally
+        {
+            _suppressFilterApplication = false;
         }
 
+        ApplyFilters();
         var item = Groups.SelectMany(group => group)
             .FirstOrDefault(candidate => candidate.Summary.Key.Equals(key));
         await SelectAsync(item, cancellationToken);
@@ -491,7 +506,10 @@ public sealed class AgentSessionsViewModel : ObservableObject
                 .FirstOrDefault(item => item.Summary.Key.Equals(selectedKey.Value));
             if (SelectedSession is null)
             {
+                _previewCts?.Cancel();
+                _previewCts = null;
                 Preview = null;
+                IsPreviewLoading = false;
             }
         }
 
@@ -510,6 +528,14 @@ public sealed class AgentSessionsViewModel : ObservableObject
         {
             State = AgentSessionsState.Ready;
             StatusMessage = $"{_allSessions.Count:N0} sessions loaded.";
+        }
+    }
+
+    private void ApplyFiltersUnlessSuppressed()
+    {
+        if (!_suppressFilterApplication)
+        {
+            ApplyFilters();
         }
     }
 
@@ -598,9 +624,7 @@ public sealed class AgentSessionsViewModel : ObservableObject
     }
 
     private static string ProviderDisplayName(string providerId) =>
-        providerId.Equals("codex", StringComparison.OrdinalIgnoreCase)
-            ? "Codex"
-            : char.ToUpperInvariant(providerId[0]) + providerId[1..];
+        DisplayText.ProviderName(providerId);
 
     private static int SourceSortOrder(string source) => source switch
     {
@@ -701,38 +725,12 @@ public sealed class AgentSessionListItem(AgentSessionSummary summary)
     public string WorkingDirectory => Summary.WorkingDirectory;
     public string Environment => Summary.Environment.DisplayName;
     public string Source => Summary.Source;
-    public string Folder => Summary.Git?.RepositoryName ?? LastPathSegment(Summary.WorkingDirectory);
+    public string Folder => Summary.Git?.RepositoryName ?? DisplayText.LastPathSegment(Summary.WorkingDirectory);
     public string Branch => string.IsNullOrWhiteSpace(Summary.Git?.Branch)
         ? "Branch unavailable"
         : Summary.Git.Branch;
-    public string Provider => ProviderDisplayName(Summary.Environment.Id);
-    public string Recency => FormatRecency(Summary.RecencyAt);
+    public string Provider => DisplayText.ProviderName(Summary.Environment.Id);
+    public string Recency => DisplayText.RelativeTime(Summary.RecencyAt);
     public string SessionId => Summary.Key.SessionId;
 
-    private static string LastPathSegment(string path)
-    {
-        var normalized = path.TrimEnd('/', '\\');
-        var separator = Math.Max(normalized.LastIndexOf('/'), normalized.LastIndexOf('\\'));
-        return separator >= 0 ? normalized[(separator + 1)..] : normalized;
-    }
-
-    private static string ProviderDisplayName(string environmentId)
-    {
-        var separator = environmentId.IndexOf(':');
-        var provider = separator > 0 ? environmentId[..separator] : environmentId;
-        return provider.Equals("codex", StringComparison.OrdinalIgnoreCase)
-            ? "Codex"
-            : char.ToUpperInvariant(provider[0]) + provider[1..];
-    }
-
-    private static string FormatRecency(DateTimeOffset value)
-    {
-        var elapsed = DateTimeOffset.Now - value.ToLocalTime();
-        return elapsed.TotalMinutes < 1 ? "Just now"
-            : elapsed.TotalHours < 1 ? $"{(int)elapsed.TotalMinutes} min ago"
-            : elapsed.TotalDays < 1 ? $"{(int)elapsed.TotalHours} hr ago"
-            : elapsed.TotalDays < 2 ? "Yesterday"
-            : elapsed.TotalDays < 7 ? $"{(int)elapsed.TotalDays} days ago"
-            : value.ToLocalTime().ToString("d MMM yyyy");
-    }
 }

@@ -19,7 +19,7 @@ Session information displayed by Flow can include session identifiers, titles, s
 
 Agent-session summaries and previews are held in memory while the relevant parts of Flow are active. Flow does not copy them into its GitHub cache, upload them to Openza, or directly read, edit, move, or delete Codex JSONL or SQLite state files.
 
-Flow stores only the identifiers of agent environments you disable and your preferred terminal launch mode in Windows application settings. It does not persist a catalog of sessions, session identifiers, prompts, previews, working directories, or repositories.
+For Agent Sessions, Flow stores the identifiers of agent environments you disable and your preferred terminal launch mode in Windows application settings. It does not persist a catalog of sessions, session identifiers, prompts, previews, working directories, or repositories.
 
 ## Resuming a Session
 

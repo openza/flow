@@ -42,8 +42,11 @@ public sealed record AgentGitMetadata(string? Branch, string? RepositoryRoot, st
                 return null;
             }
 
-            var normalized = value.TrimEnd('/', '\\');
-            var lastSeparator = Math.Max(normalized.LastIndexOf('/'), normalized.LastIndexOf('\\'));
+            var suffixIndex = value.IndexOfAny(['?', '#']);
+            var normalized = (suffixIndex >= 0 ? value[..suffixIndex] : value).TrimEnd('/', '\\');
+            var lastSeparator = Math.Max(
+                Math.Max(normalized.LastIndexOf('/'), normalized.LastIndexOf('\\')),
+                normalized.LastIndexOf(':'));
             var name = lastSeparator >= 0 ? normalized[(lastSeparator + 1)..] : normalized;
             return name.EndsWith(".git", StringComparison.OrdinalIgnoreCase) ? name[..^4] : name;
         }

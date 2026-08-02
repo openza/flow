@@ -17,9 +17,7 @@
         </Style>
     </Page.Resources>
 
-    <Grid
-        Width="{Binding ActualWidth, ElementName=ActivityPageRoot}"
-        HorizontalAlignment="Stretch">
+    <Grid HorizontalAlignment="Stretch">
         <Grid
             x:Name="AuthView"
             MaxWidth="620"

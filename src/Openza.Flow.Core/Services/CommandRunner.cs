@@ -56,7 +56,21 @@ public sealed class CommandRunner : ICommandRunner
         catch (OperationCanceledException)
         {
             TryKill(process);
+            await ObserveAsync(outputTask).ConfigureAwait(false);
+            await ObserveAsync(errorTask).ConfigureAwait(false);
             throw;
+        }
+    }
+
+    private static async Task ObserveAsync(Task task)
+    {
+        try
+        {
+            await task.ConfigureAwait(false);
+        }
+        catch
+        {
+            // Reader faults are expected after cancellation terminates the process.
         }
     }
 

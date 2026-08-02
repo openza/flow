@@ -95,6 +95,7 @@ public sealed class DeveloperProjectUtilitiesTests
         ]));
 
         Assert.Equal(2, project.SessionCount);
+        Assert.Equal(@"D:\Work\Flow", project.RootPath);
     }
 
     private static AgentEnvironment Environment(string id, AgentEnvironmentKind kind, string name) =>

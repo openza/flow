@@ -32,7 +32,9 @@ public sealed partial class ActivityPage : Page
     private IReadOnlyList<GithubRelease> _loadedReleases = [];
     private IReadOnlyList<GithubWorkflowRun> _loadedWorkflowRuns = [];
     private CancellationTokenSource? _loadCts;
+    private readonly List<CancellationTokenSource> _retiredLoadSources = [];
     private CancellationTokenSource? _authCts;
+    private ScrollViewer? _pullRequestScrollViewer;
     private DeviceCodeInfo? _currentDeviceCode;
     private ActivityMode _mode = ActivityMode.ReviewRequests;
     private ActivityMode _pullRequestMode = ActivityMode.ReviewRequests;
@@ -218,6 +220,14 @@ public sealed partial class ActivityPage : Page
         _searchTimer.Stop();
         _loadCts?.Cancel();
         _authCts?.Cancel();
+        _loadCts?.Dispose();
+        _authCts?.Dispose();
+        foreach (var source in _retiredLoadSources)
+        {
+            source.Dispose();
+        }
+
+        _retiredLoadSources.Clear();
         await Task.CompletedTask;
     }
 
@@ -405,8 +415,7 @@ public sealed partial class ActivityPage : Page
 
     private async Task<bool> LoadPrimaryListAsync(bool useCacheFirst)
     {
-        _loadCts?.Cancel();
-        _loadCts?.Dispose();
+        RetireCurrentLoadSource();
         _loadCts = new CancellationTokenSource();
         var token = _loadCts.Token;
         var generation = ++_loadGeneration;
@@ -622,8 +631,7 @@ public sealed partial class ActivityPage : Page
         GitHubPageMode requestedPageMode,
         ActivityMode requestedMode)
     {
-        _loadCts?.Cancel();
-        _loadCts?.Dispose();
+        RetireCurrentLoadSource();
         _loadCts = new CancellationTokenSource();
         var token = _loadCts.Token;
         var generation = ++_loadGeneration;
@@ -928,16 +936,30 @@ public sealed partial class ActivityPage : Page
         AuthInfoBar.IsOpen = true;
         AuthInfoBar.Severity = InfoBarSeverity.Informational;
         AuthInfoBar.Message = "Validating token…";
-        var validation = await _authService.ValidateAndSaveTokenAsync(token);
-        if (!validation.IsValid)
+        try
+        {
+            var validation = await _authService.ValidateAndSaveTokenAsync(token);
+            if (!validation.IsValid)
+            {
+                AuthInfoBar.Severity = InfoBarSeverity.Error;
+                AuthInfoBar.Message = validation.ErrorMessage ?? "Token validation failed.";
+                return;
+            }
+
+            PatBox.Password = string.Empty;
+            await ShowActivityAsync();
+        }
+        catch (OperationCanceledException)
+        {
+            AuthInfoBar.Severity = InfoBarSeverity.Warning;
+            AuthInfoBar.Message = "GitHub sign-in was cancelled.";
+        }
+        catch (Exception exception)
         {
             AuthInfoBar.Severity = InfoBarSeverity.Error;
-            AuthInfoBar.Message = validation.ErrorMessage ?? "Token validation failed.";
-            return;
+            AuthInfoBar.Message = "GitHub sign-in could not be completed. Check your connection and try again.";
+            AppLog.Write(exception);
         }
-
-        PatBox.Password = string.Empty;
-        await ShowActivityAsync();
     }
 
     private void OnCancelDeviceFlowClicked(object sender, RoutedEventArgs e)
@@ -963,16 +985,38 @@ public sealed partial class ActivityPage : Page
 
     private void OnPullRequestListLoaded(object sender, RoutedEventArgs e)
     {
+        if (_pullRequestScrollViewer is not null)
+        {
+            return;
+        }
+
         if (FindDescendant<ScrollViewer>(PullRequestList) is { } scrollViewer)
         {
-            scrollViewer.ViewChanged += async (_, _) =>
-            {
-                if (!_isLoadingMore && _hasNextPage && scrollViewer.ScrollableHeight - scrollViewer.VerticalOffset < 260)
-                {
-                    await LoadMoreAsync();
-                }
-            };
+            _pullRequestScrollViewer = scrollViewer;
+            scrollViewer.ViewChanged += OnPullRequestScrollViewerViewChanged;
         }
+    }
+
+    private async void OnPullRequestScrollViewerViewChanged(object? sender, ScrollViewerViewChangedEventArgs e)
+    {
+        if (_pullRequestScrollViewer is { } scrollViewer
+            && !_isLoadingMore
+            && _hasNextPage
+            && scrollViewer.ScrollableHeight - scrollViewer.VerticalOffset < 260)
+        {
+            await LoadMoreAsync();
+        }
+    }
+
+    private void RetireCurrentLoadSource()
+    {
+        if (_loadCts is null)
+        {
+            return;
+        }
+
+        _loadCts.Cancel();
+        _retiredLoadSources.Add(_loadCts);
     }
 
     private void SetLoading(bool loading)

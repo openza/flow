@@ -42,6 +42,10 @@ public sealed class WindowsTerminalLauncher(ICommandRunner commandRunner) : ITer
                 ? new TerminalLaunchValidation(true)
                 : new TerminalLaunchValidation(false, "directory_missing", "The original Linux working directory no longer exists.");
         }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
             return new TerminalLaunchValidation(false, "validation_timeout", "The WSL directory check timed out.");

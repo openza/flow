@@ -85,7 +85,7 @@
                                             </StackPanel>
                                             <ToggleSwitch
                                                 Grid.Column="1"
-                                                AutomationProperties.Name="Enable agent environment"
+                                                AutomationProperties.Name="{Binding DisplayName}"
                                                 IsEnabled="{Binding CanEnable}"
                                                 IsOn="{Binding IsEnabled, Mode=TwoWay}"
                                                 Tag="{Binding Id}"

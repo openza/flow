@@ -7,6 +7,7 @@ namespace Openza.Flow.Core.Services;
 public sealed class CodexAgentSessionProvider : IAgentSessionProvider
 {
     private readonly ConcurrentDictionary<string, ICodexAppServerClient> _clients = new(StringComparer.OrdinalIgnoreCase);
+    private readonly SemaphoreSlim _clientGate = new(1, 1);
     private readonly IAgentEnvironmentDiscovery _discovery;
     private readonly Func<AgentEnvironment, ICodexAppServerClient> _clientFactory;
 
@@ -43,19 +44,42 @@ public sealed class CodexAgentSessionProvider : IAgentSessionProvider
 
     public async Task<AgentSessionPreview> LoadPreviewAsync(AgentSessionSummary session, CancellationToken cancellationToken = default)
     {
-        var client = _clients.GetOrAdd(session.Environment.Id, _ => _clientFactory(session.Environment));
+        var client = await GetClientAsync(session.Environment, cancellationToken);
         await client.InitializeAsync(cancellationToken);
         return await client.LoadPreviewAsync(session.Key.SessionId, cancellationToken);
     }
 
     public async ValueTask DisposeAsync()
     {
-        foreach (var client in _clients.Values)
+        IReadOnlyList<ICodexAppServerClient> clients;
+        await _clientGate.WaitAsync();
+        try
         {
-            await client.DisposeAsync();
+            clients = _clients.Values.ToList();
+            _clients.Clear();
+        }
+        finally
+        {
+            _clientGate.Release();
         }
 
-        _clients.Clear();
+        List<Exception>? failures = null;
+        foreach (var client in clients)
+        {
+            try
+            {
+                await client.DisposeAsync();
+            }
+            catch (Exception exception)
+            {
+                (failures ??= []).Add(exception);
+            }
+        }
+
+        if (failures is not null)
+        {
+            throw new AggregateException("One or more Codex app-server clients could not be disposed.", failures);
+        }
     }
 
     private async Task EnumerateEnvironmentAsync(
@@ -66,7 +90,7 @@ public sealed class CodexAgentSessionProvider : IAgentSessionProvider
         var firstPage = true;
         try
         {
-            var client = _clients.GetOrAdd(environment.Id, _ => _clientFactory(environment));
+            var client = await GetClientAsync(environment, cancellationToken);
             await client.InitializeAsync(cancellationToken);
             string? cursor = null;
             do
@@ -90,6 +114,38 @@ public sealed class CodexAgentSessionProvider : IAgentSessionProvider
         catch (Exception)
         {
             await writer.WriteAsync(new AgentSessionPage(environment.Id, [], firstPage, true, "provider_failure"), CancellationToken.None);
+        }
+    }
+
+    private async Task<ICodexAppServerClient> GetClientAsync(
+        AgentEnvironment environment,
+        CancellationToken cancellationToken)
+    {
+        if (_clients.TryGetValue(environment.Id, out var existing))
+        {
+            return existing;
+        }
+
+        await _clientGate.WaitAsync(cancellationToken);
+        try
+        {
+            if (_clients.TryGetValue(environment.Id, out existing))
+            {
+                return existing;
+            }
+
+            var client = _clientFactory(environment);
+            if (_clients.TryAdd(environment.Id, client))
+            {
+                return client;
+            }
+
+            await client.DisposeAsync();
+            return _clients[environment.Id];
+        }
+        finally
+        {
+            _clientGate.Release();
         }
     }
 

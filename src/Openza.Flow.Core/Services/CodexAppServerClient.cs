@@ -23,6 +23,7 @@ public sealed class CodexAppServerClient : ICodexAppServerClient
     private readonly Task _stderrTask;
     private long _nextRequestId;
     private bool _initialized;
+    private int _disposeState;
 
     public CodexAppServerClient(AgentEnvironment environment)
     {
@@ -42,10 +43,12 @@ public sealed class CodexAppServerClient : ICodexAppServerClient
         }
         catch (CodexAppServerException)
         {
+            CleanupFailedStart();
             throw;
         }
         catch (Exception exception)
         {
+            CleanupFailedStart();
             throw new CodexAppServerException("process_start", "Codex app-server could not be started.", exception);
         }
 
@@ -128,6 +131,11 @@ public sealed class CodexAppServerClient : ICodexAppServerClient
 
     public async ValueTask DisposeAsync()
     {
+        if (Interlocked.Exchange(ref _disposeState, 1) != 0)
+        {
+            return;
+        }
+
         _lifetime.Cancel();
         try
         {
@@ -153,6 +161,13 @@ public sealed class CodexAppServerClient : ICodexAppServerClient
             // Disposal is best effort.
         }
 
+        _process.Dispose();
+        _writeGate.Dispose();
+        _lifetime.Dispose();
+    }
+
+    private void CleanupFailedStart()
+    {
         _process.Dispose();
         _writeGate.Dispose();
         _lifetime.Dispose();
@@ -331,14 +346,9 @@ public sealed class CodexAppServerClient : ICodexAppServerClient
                     return;
                 }
 
-                JsonDocument document;
-                try
+                if (!TryParseResponseLine(line, out var document))
                 {
-                    document = JsonDocument.Parse(line);
-                }
-                catch (JsonException exception)
-                {
-                    FailPending(new CodexAppServerException("malformed_json", "Codex app-server returned malformed JSON.", exception));
+                    // Ignore non-protocol stdout. Correlated requests retain their own timeout.
                     continue;
                 }
 
@@ -373,6 +383,20 @@ public sealed class CodexAppServerClient : ICodexAppServerClient
         catch (Exception exception)
         {
             FailPending(new CodexAppServerException("read", "Codex app-server output is unavailable.", exception));
+        }
+    }
+
+    internal static bool TryParseResponseLine(string line, out JsonDocument document)
+    {
+        try
+        {
+            document = JsonDocument.Parse(line);
+            return true;
+        }
+        catch (JsonException)
+        {
+            document = null!;
+            return false;
         }
     }
 

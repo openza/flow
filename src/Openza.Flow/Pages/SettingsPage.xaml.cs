@@ -16,6 +16,7 @@ public sealed partial class SettingsPage : Page
     private readonly FlowNotificationService _notifications;
     private readonly GitHubWorkspaceState _github;
     private readonly ObservableCollection<EnvironmentSettingItem> _environments = [];
+    private readonly SemaphoreSlim _backgroundModeGate = new(1, 1);
     private bool _loading;
 
     public SettingsPage(
@@ -113,6 +114,11 @@ public sealed partial class SettingsPage : Page
         catch (OperationCanceledException)
         {
         }
+        catch (Exception exception)
+        {
+            AppLog.Write(exception);
+            ShowMessage("Agent environments could not be refreshed.", InfoBarSeverity.Error);
+        }
     }
 
     private void OnTerminalLaunchModeChanged(object sender, SelectionChangedEventArgs e)
@@ -172,15 +178,35 @@ public sealed partial class SettingsPage : Page
         }
 
         _settings.RunInBackground = RunInBackgroundToggle.IsOn;
-        if (RunInBackgroundToggle.IsOn)
+        await _backgroundModeGate.WaitAsync();
+        try
         {
-            _tray.SetVisible(true);
-            _backgroundRefresh.Start();
-        }
-        else
-        {
+            if (_settings.RunInBackground)
+            {
+                _tray.SetVisible(true);
+                _backgroundRefresh.Start();
+                return;
+            }
+
             await _backgroundRefresh.StopAsync();
-            _tray.SetVisible(false);
+            if (_settings.RunInBackground)
+            {
+                _tray.SetVisible(true);
+                _backgroundRefresh.Start();
+            }
+            else
+            {
+                _tray.SetVisible(false);
+            }
+        }
+        catch (Exception exception)
+        {
+            AppLog.Write(exception);
+            ShowMessage("Background mode could not be updated.", InfoBarSeverity.Error);
+        }
+        finally
+        {
+            _backgroundModeGate.Release();
         }
     }
 

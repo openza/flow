@@ -83,9 +83,19 @@ public sealed partial class MainWindow : Window
         appWindow.Closing += OnAppWindowClosing;
         Closed += async (_, _) =>
         {
-            await _activityPage.DisposeAsync();
-            await _sessionWorkspace.DisposeAsync();
-            _tray.Dispose();
+            try
+            {
+                await _activityPage.DisposeAsync();
+                await _sessionWorkspace.DisposeAsync();
+            }
+            catch (Exception exception)
+            {
+                AppLog.Write(exception);
+            }
+            finally
+            {
+                _tray.Dispose();
+            }
         };
         Activated += OnWindowActivated;
     }
@@ -93,7 +103,7 @@ public sealed partial class MainWindow : Window
     public void ShowWindow()
     {
         WindowInterop.Show(this);
-        _ = ActivateCurrentPageAsync();
+        _ = ObserveAsync(ActivateCurrentPageAsync());
     }
 
     public void ExitApplication()
@@ -140,19 +150,29 @@ public sealed partial class MainWindow : Window
 
     private async void OnWindowActivated(object sender, WindowActivatedEventArgs args)
     {
-        if (!_initialized)
+        try
         {
-            _initialized = true;
-            ApplyTheme();
-            ShellNavigation.SelectedItem = HomeNavigationItem;
-            await NavigateAsync(ShellPage.Home);
-            _ = InitializeGitHubAsync();
-            return;
-        }
+            if (!_initialized)
+            {
+                _initialized = true;
+                ApplyTheme();
+                ShellNavigation.SelectedItem = HomeNavigationItem;
+                await NavigateAsync(ShellPage.Home);
+                _ = ObserveAsync(InitializeGitHubAsync());
+                return;
+            }
 
-        if (args.WindowActivationState != WindowActivationState.Deactivated)
+            if (args.WindowActivationState != WindowActivationState.Deactivated)
+            {
+                await ActivateCurrentPageAsync();
+            }
+        }
+        catch (OperationCanceledException)
         {
-            await ActivateCurrentPageAsync();
+        }
+        catch (Exception exception)
+        {
+            AppLog.Write(exception);
         }
     }
 
@@ -254,7 +274,7 @@ public sealed partial class MainWindow : Window
                 _ => _homePage
             };
             UpdateGitHubContextBar();
-            NavigationProgress.Visibility = IsGitHubPage(page) ? Visibility.Collapsed : Visibility.Visible;
+            NavigationProgress.Visibility = page is ShellPage.Settings ? Visibility.Collapsed : Visibility.Visible;
             var generation = ++_navigationGeneration;
             _ = CompleteNavigationAsync(page, generation, leavingSessionSurface);
         }
@@ -340,7 +360,7 @@ public sealed partial class MainWindow : Window
         }
 
         args.Cancel = true;
-        _ = _sessionWorkspace.DeactivateAsync();
+        _ = ObserveAsync(_sessionWorkspace.DeactivateAsync());
         _activityPage.SetActive(false);
         WindowInterop.Hide(this);
         _tray.SetVisible(true);
@@ -348,6 +368,21 @@ public sealed partial class MainWindow : Window
     }
 
     private void OnGitHubContextChanged(object? sender, EventArgs e) => UpdateGitHubContextBar();
+
+    private static async Task ObserveAsync(Task task)
+    {
+        try
+        {
+            await task;
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        catch (Exception exception)
+        {
+            AppLog.Write(exception);
+        }
+    }
 
     private void UpdateGitHubContextBar()
     {
@@ -375,17 +410,18 @@ public sealed partial class MainWindow : Window
         }
     }
 
-    private async void OnShellOrganizationChanged(object sender, SelectionChangedEventArgs e)
+    private void OnShellOrganizationChanged(object sender, SelectionChangedEventArgs e)
     {
         if (_syncingGitHubContext || ShellOrganizationCombo.SelectedItem is not GitHubOrganizationOption option)
         {
             return;
         }
 
-        await _activityPage.SelectOrganizationAsync(option.Login);
+        _ = ObserveAsync(_activityPage.SelectOrganizationAsync(option.Login));
     }
 
-    private async void OnShellSignOutClicked(object sender, RoutedEventArgs e) => await _activityPage.SignOutAsync();
+    private void OnShellSignOutClicked(object sender, RoutedEventArgs e) =>
+        _ = ObserveAsync(_activityPage.SignOutAsync());
 
     private void OnGitHubConnectClicked(object sender, RoutedEventArgs e) => SelectNavigation(PullRequestsNavigationItem);
 

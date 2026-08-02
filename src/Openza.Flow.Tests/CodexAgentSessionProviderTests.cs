@@ -81,6 +81,45 @@ public sealed class CodexAgentSessionProviderTests
         Assert.Equal(1, clients[1].InitializeCallCount);
     }
 
+    [Fact]
+    public async Task ConcurrentPreviewLoadsCreateOneClientPerEnvironment()
+    {
+        var environment = AgentSessionUtilitiesTests.Environment("codex:wsl:ubuntu", AgentEnvironmentKind.Wsl, "Ubuntu");
+        var session = AgentSessionUtilitiesTests.Session(environment, "one", "One", DateTimeOffset.UtcNow);
+        var factoryCalls = 0;
+        await using var provider = new CodexAgentSessionProvider(
+            new FakeDiscovery([environment]),
+            _ =>
+            {
+                Interlocked.Increment(ref factoryCalls);
+                return new FakeClient(environment, []);
+            });
+
+        await Task.WhenAll(Enumerable.Range(0, 8).Select(_ => provider.LoadPreviewAsync(session)));
+
+        Assert.Equal(1, factoryCalls);
+    }
+
+    [Fact]
+    public async Task DisposeAttemptsEveryClientWhenOneFails()
+    {
+        var windows = AgentSessionUtilitiesTests.Environment("codex:windows", AgentEnvironmentKind.Windows, "Windows");
+        var ubuntu = AgentSessionUtilitiesTests.Environment("codex:wsl:ubuntu", AgentEnvironmentKind.Wsl, "Ubuntu");
+        var failing = new FakeClient(windows, [new CodexSessionListPage([], null)], disposalFailure: new InvalidOperationException());
+        var working = new FakeClient(ubuntu, [new CodexSessionListPage([], null)]);
+        await using var provider = new CodexAgentSessionProvider(
+            new FakeDiscovery([windows, ubuntu]),
+            environment => environment.Id == windows.Id ? failing : working);
+
+        await foreach (var _ in provider.EnumerateSessionsAsync([windows, ubuntu]))
+        {
+        }
+
+        await Assert.ThrowsAsync<AggregateException>(() => provider.DisposeAsync().AsTask());
+        Assert.Equal(1, failing.DisposeCallCount);
+        Assert.Equal(1, working.DisposeCallCount);
+    }
+
     private sealed class FakeDiscovery(IReadOnlyList<AgentEnvironment> environments) : IAgentEnvironmentDiscovery
     {
         public Task<IReadOnlyList<AgentEnvironment>> ProbeAsync(CancellationToken cancellationToken = default) =>
@@ -90,13 +129,15 @@ public sealed class CodexAgentSessionProviderTests
     private sealed class FakeClient(
         AgentEnvironment environment,
         IReadOnlyList<CodexSessionListPage> pages,
-        Exception? initializationFailure = null) : ICodexAppServerClient
+        Exception? initializationFailure = null,
+        Exception? disposalFailure = null) : ICodexAppServerClient
     {
         private int _page;
 
         public AgentEnvironment Environment { get; } = environment;
         public List<string?> ReceivedCursors { get; } = [];
         public int InitializeCallCount { get; private set; }
+        public int DisposeCallCount { get; private set; }
 
         public Task InitializeAsync(CancellationToken cancellationToken = default)
         {
@@ -113,6 +154,10 @@ public sealed class CodexAgentSessionProviderTests
         public Task<AgentSessionPreview> LoadPreviewAsync(string sessionId, CancellationToken cancellationToken = default) =>
             Task.FromResult(new AgentSessionPreview(new AgentSessionKey(Environment.Id, sessionId), []));
 
-        public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+        public ValueTask DisposeAsync()
+        {
+            DisposeCallCount++;
+            return disposalFailure is null ? ValueTask.CompletedTask : ValueTask.FromException(disposalFailure);
+        }
     }
 }

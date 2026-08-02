@@ -11,8 +11,7 @@
     <Page.Resources>
         <CollectionViewSource
             x:Name="GroupedSessions"
-            IsSourceGrouped="True"
-            Source="{Binding Groups}" />
+            IsSourceGrouped="True" />
 
         <Style x:Key="FilterListViewStyle" TargetType="ListView">
             <Setter Property="SelectionMode" Value="Single" />
