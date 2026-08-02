@@ -54,6 +54,7 @@ public sealed class AgentSessionWorkspace(
     private HashSet<string> _snapshotEnvironmentIds = new(StringComparer.OrdinalIgnoreCase);
     private Task? _refreshTask;
     private CancellationTokenSource? _refreshCts;
+    private volatile bool _preserveExistingForRefresh = true;
     private bool _disposed;
 
     public event EventHandler? SnapshotChanged;
@@ -83,22 +84,38 @@ public sealed class AgentSessionWorkspace(
     public Task RefreshAsync(bool preserveExisting = true, CancellationToken cancellationToken = default)
     {
         Task refreshTask;
+        var publishClearedSnapshot = false;
         lock (_gate)
         {
             ObjectDisposedException.ThrowIf(_disposed, this);
-            var canReuseJustCompletedRefresh = _refreshTask?.IsCompleted == true
+            var canReuseJustCompletedRefresh = preserveExisting
+                && _refreshTask?.IsCompleted == true
                 && CanUseSnapshot(TimeSpan.FromMilliseconds(100));
             if (_refreshTask is { IsCompleted: false } || canReuseJustCompletedRefresh)
             {
+                if (!preserveExisting && _preserveExistingForRefresh)
+                {
+                    _preserveExistingForRefresh = false;
+                    _sessions = [];
+                    StatusMessage = "Refreshing agent sessions…";
+                    publishClearedSnapshot = true;
+                }
+
                 refreshTask = _refreshTask!;
             }
             else
             {
                 _refreshCts?.Dispose();
                 _refreshCts = new CancellationTokenSource();
+                _preserveExistingForRefresh = preserveExisting;
                 _refreshTask = RefreshCoreAsync(preserveExisting, _refreshCts.Token);
                 refreshTask = _refreshTask;
             }
+        }
+
+        if (publishClearedSnapshot)
+        {
+            RaiseSnapshotChanged();
         }
 
         return refreshTask.WaitAsync(cancellationToken);
@@ -186,6 +203,7 @@ public sealed class AgentSessionWorkspace(
                 .ToList();
             if (enabled.Count == 0)
             {
+                var canPreserveSnapshot = hadSnapshot && ShouldPreserveExistingForCurrentRefresh();
                 if (configuredEnvironments.Count == 0)
                 {
                     _sessions = [];
@@ -196,8 +214,8 @@ public sealed class AgentSessionWorkspace(
                 }
                 else
                 {
-                    State = hadSnapshot ? AgentSessionWorkspaceState.PartialFailure : AgentSessionWorkspaceState.Unavailable;
-                    StatusMessage = hadSnapshot
+                    State = canPreserveSnapshot ? AgentSessionWorkspaceState.PartialFailure : AgentSessionWorkspaceState.Unavailable;
+                    StatusMessage = canPreserveSnapshot
                         ? $"Showing {previousCount:N0} sessions. No enabled coding agent environment responded."
                         : "No enabled coding agent environment is available. Check Settings.";
                 }
@@ -230,6 +248,7 @@ public sealed class AgentSessionWorkspace(
             }
 
             var allProvidersFailed = failedProviders.Count == enabled.Count;
+            var canPreserveSnapshotAfterFailure = hadSnapshot && ShouldPreserveExistingForCurrentRefresh();
             if (!allProvidersFailed)
             {
                 _sessions = AgentSessionUtilities.MergeAndSort(freshSessions);
@@ -238,14 +257,14 @@ public sealed class AgentSessionWorkspace(
                     .Select(environment => environment.Id)
                     .ToHashSet(StringComparer.OrdinalIgnoreCase);
             }
-            else if (!hadSnapshot)
+            else if (!canPreserveSnapshotAfterFailure)
             {
                 _sessions = [];
                 LastRefresh = null;
                 _snapshotEnvironmentIds.Clear();
             }
 
-            if (allProvidersFailed && hadSnapshot)
+            if (allProvidersFailed && canPreserveSnapshotAfterFailure)
             {
                 State = AgentSessionWorkspaceState.PartialFailure;
                 StatusMessage = $"Showing {previousCount:N0} sessions. Agent session history could not be refreshed.";
@@ -274,8 +293,9 @@ public sealed class AgentSessionWorkspace(
         }
         catch
         {
-            State = hadSnapshot ? AgentSessionWorkspaceState.PartialFailure : AgentSessionWorkspaceState.Unavailable;
-            StatusMessage = hadSnapshot
+            var canPreserveSnapshot = hadSnapshot && ShouldPreserveExistingForCurrentRefresh();
+            State = canPreserveSnapshot ? AgentSessionWorkspaceState.PartialFailure : AgentSessionWorkspaceState.Unavailable;
+            StatusMessage = canPreserveSnapshot
                 ? $"Showing {previousCount:N0} sessions. Agent session history could not be refreshed."
                 : "Coding agent environments could not be discovered.";
         }
@@ -285,6 +305,8 @@ public sealed class AgentSessionWorkspace(
             RaiseSnapshotChanged();
         }
     }
+
+    private bool ShouldPreserveExistingForCurrentRefresh() => _preserveExistingForRefresh;
 
     private void RaiseSnapshotChanged() => SnapshotChanged?.Invoke(this, EventArgs.Empty);
 }

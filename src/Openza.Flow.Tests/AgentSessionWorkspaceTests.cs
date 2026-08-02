@@ -63,6 +63,31 @@ public sealed class AgentSessionWorkspaceTests
         Assert.Equal(1, provider.EnumerationCount);
     }
 
+    [Fact]
+    public async Task NonPreservingCallerClearsSnapshotWhileReusingInflightRefresh()
+    {
+        var provider = new FakeProvider();
+        await using var workspace = new AgentSessionWorkspace(provider, new Enablement());
+        await workspace.RefreshAsync();
+        Assert.Single(workspace.Sessions);
+        await Task.Delay(150);
+
+        var entered = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var release = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        provider.EnumerationEntered = entered;
+        provider.EnumerationRelease = release.Task;
+
+        var preservingRefresh = workspace.RefreshAsync(preserveExisting: true);
+        await entered.Task;
+        var clearingRefresh = workspace.RefreshAsync(preserveExisting: false);
+
+        Assert.Empty(workspace.Sessions);
+        release.SetResult(true);
+        await Task.WhenAll(preservingRefresh, clearingRefresh);
+        Assert.Equal(2, provider.EnumerationCount);
+        Assert.Single(workspace.Sessions);
+    }
+
     private sealed class Enablement : IAgentEnvironmentEnablement
     {
         public bool IsAgentEnvironmentEnabled(string environmentId) => true;
@@ -90,6 +115,10 @@ public sealed class AgentSessionWorkspaceTests
 
         public int EnumerationCount { get; private set; }
 
+        public TaskCompletionSource<bool>? EnumerationEntered { get; set; }
+
+        public Task? EnumerationRelease { get; set; }
+
         public Task<IReadOnlyList<AgentEnvironment>> ProbeEnvironmentsAsync(CancellationToken cancellationToken = default)
         {
             ProbeCount++;
@@ -104,6 +133,12 @@ public sealed class AgentSessionWorkspaceTests
             [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
             EnumerationCount++;
+            EnumerationEntered?.TrySetResult(true);
+            if (EnumerationRelease is not null)
+            {
+                await EnumerationRelease.WaitAsync(cancellationToken);
+            }
+
             await Task.Yield();
             var now = DateTimeOffset.UtcNow;
             yield return new AgentSessionPage(
