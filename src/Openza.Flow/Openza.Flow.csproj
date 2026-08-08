@@ -33,7 +33,6 @@
     <AppxPackageSigningEnabled Condition="'$(LocalPackageSigningEnabled)' == 'true' and Exists('$(LocalPackageCertificateKeyFile)')">true</AppxPackageSigningEnabled>
     <AppxPackageSigningEnabled Condition="'$(LocalPackageSigningEnabled)' != 'true' or !Exists('$(LocalPackageCertificateKeyFile)')">false</AppxPackageSigningEnabled>
     <PackageCertificateKeyFile Condition="'$(LocalPackageSigningEnabled)' == 'true' and Exists('$(LocalPackageCertificateKeyFile)')">$(LocalPackageCertificateKeyFile)</PackageCertificateKeyFile>
-    <GenerateTemporaryStoreCertificate>True</GenerateTemporaryStoreCertificate>
   </PropertyGroup>
 
   <ItemGroup>
