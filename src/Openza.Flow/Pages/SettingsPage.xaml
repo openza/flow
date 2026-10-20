@@ -266,7 +266,7 @@
                                 AutomationProperties.Name="Open Openza Flow user guide"
                                 Click="OnAboutLinkClicked"
                                 Content="User guide"
-                                Tag="https://solanky.dev/openza/flow/"
+                                Tag="https://openza.org/flow/"
                                 Style="{ThemeResource AccentButtonStyle}" />
                             <Button
                                 AutomationProperties.Name="Open Openza Flow source code"
@@ -314,7 +314,7 @@
                                 Grid.Column="1"
                                 AutomationProperties.Name="Open Openza Flow privacy policy"
                                 Content="Open"
-                                NavigateUri="https://solanky.dev/openza/flow/privacy/" />
+                                NavigateUri="https://openza.org/flow/privacy/" />
                         </Grid>
                         <Rectangle Style="{StaticResource SettingsDividerStyle}" />
                         <Grid Padding="18,15" ColumnSpacing="16">
@@ -333,7 +333,7 @@
                                 Grid.Column="1"
                                 AutomationProperties.Name="Open Openza Flow issues"
                                 Content="Open"
-                                NavigateUri="https://solanky.dev/openza/flow/support/" />
+                                NavigateUri="https://openza.org/flow/support/" />
                         </Grid>
                     </StackPanel>
                 </Border>
