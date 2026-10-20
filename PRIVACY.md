@@ -60,7 +60,7 @@ Flow does not send GitHub credentials or GitHub data to Openza servers.
 Flow connects directly to GitHub API and authentication endpoints only when you use GitHub features. It may open the following destinations through Windows using your default browser:
 
 - GitHub pull request, release, workflow-run, source, support, and authentication pages.
-- The Openza Flow user guide, privacy policy, and release notes on `solanky.dev` or GitHub.
+- The Openza Flow user guide, privacy policy, and release notes on `openza.org` or GitHub.
 
 Agent-session enumeration uses local processes and local inter-process communication. Flow does not upload agent-session summaries or previews.
 
