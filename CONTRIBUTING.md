@@ -29,7 +29,7 @@ dotnet build src\Openza.Flow\Openza.Flow.csproj -c Release --no-restore
 
 ## Docs
 
-The user guide lives at [solanky.dev/openza/flow](https://solanky.dev/openza/flow/). Developer documentation belongs in this repository.
+The user guide lives at [openza.org/flow](https://openza.org/flow/). Developer documentation belongs in this repository.
 
 
 ## Legacy Flutter App

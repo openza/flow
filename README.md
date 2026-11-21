@@ -58,7 +58,7 @@ Tokens are stored in Windows Credential Locker. The WinUI migration intentionall
 
 ## Documentation
 
-User guide: [solanky.dev/openza/flow](https://solanky.dev/openza/flow/)
+User guide: [openza.org/flow](https://openza.org/flow/)
 
 ## Privacy
 
