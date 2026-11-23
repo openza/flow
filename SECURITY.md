@@ -10,7 +10,7 @@ The legacy Flutter implementation is preserved for history and old releases, but
 
 Please do not open a public issue for sensitive security reports.
 
-Use **Report a vulnerability** on the repository's Security page to open a private report. If private vulnerability reporting is unavailable, email Deependra Solanky at deependra@solanky.dev with:
+Use **Report a vulnerability** on the repository's Security page to open a private report. If private vulnerability reporting is unavailable, email [hello@openza.org](mailto:hello@openza.org) with:
 
 - A clear description of the issue
 - Steps to reproduce, if possible

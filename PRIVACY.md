@@ -100,4 +100,4 @@ This policy will be updated when Flow adds features that materially change how i
 
 ## Contact
 
-For privacy questions or requests, contact Deependra Solanky at deependra@solanky.dev.
+For privacy questions or requests, email [hello@openza.org](mailto:hello@openza.org).
