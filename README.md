@@ -77,4 +77,4 @@ The source code and documentation are available under the [MIT License](LICENSE)
 **Deependra Solanky**
 
 - GitHub: [@solankydev](https://github.com/solankydev)
-- Email: deependra@solanky.dev
+- Email: [hello@openza.org](mailto:hello@openza.org)
